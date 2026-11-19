@@ -130,6 +130,7 @@ figure[data-fig="pics"]{margin-top:3.6rem;margin-bottom:4rem}
   section>.scrolly,section>.pair,section.split>h2,section>.wide{max-width:var(--col);margin-left:auto;margin-right:auto}
   /* the pinned chart hangs at the top of the screen with room above and below it, and no rule under it */
   .sticky{top:0;z-index:2;background:var(--bg);margin:0 calc(var(--pad)*-1);padding:1.25rem var(--pad) 1.15rem}
+  .scrolly:not([data-for="grid"]) .sticky{padding-top:2rem;padding-bottom:2rem}
   .sticky figcaption{margin-bottom:.4rem}
   .sticky figcaption .ct{font-size:.875rem}
   .sticky figcaption .ci{display:none}

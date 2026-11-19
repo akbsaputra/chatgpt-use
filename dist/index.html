@@ -738,9 +738,9 @@ reg('iwa',el=>{
       .on('pointerleave',()=>show(null));
   });
   if(noteTxt&&firstLabel){txt(s,noteTxt,w-2,14+nt,{...nOpt,anchor:'end',lh:17/nOpt.size});arrow(s,Math.min(w-14,firstLabel.x+10),nt+nl*17+4,firstLabel.x,firstLabel.y,RED,-0.18);}
-  if(note2&&lowLabel){const t=txt(s,note2,lowLabel.x+18,yy+26,{...nOpt,lh:17/nOpt.size}),b=t.node().getBBox(),over=b.x+b.width-(w-2);
-    if(over>0)t.attr('x',lowLabel.x+18-over).selectAll('tspan').attr('x',lowLabel.x+18-over); // keep it inside the chart
-    arrow(s,lowLabel.x+10,yy+14,lowLabel.x,lowLabel.y,RED,0.18);}
+  if(note2&&lowLabel){const t=txt(s,note2,lowLabel.x+12,yy+26,{...nOpt,lh:17/nOpt.size}),b=t.node().getBBox(),over=b.x+b.width-(w-2);
+    if(over>0)t.attr('x',lowLabel.x+12-over).selectAll('tspan').attr('x',lowLabel.x+12-over); // keep it inside the chart
+    arrow(s,+t.attr('x')-8,yy+21,lowLabel.x,lowLabel.y,RED,-0.18);}
   s.selectAll('line,text,path').style('pointer-events','none');tip.raise().style('pointer-events','none');
 });
 

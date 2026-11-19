@@ -1,0 +1,4 @@
+pandas
+numpy
+pycountry
+playwright  # only for scripts/shot.py

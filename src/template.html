@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>How Indonesia Uses ChatGPT Differently</title>
+<style>
+:root{
+  --bg:#000; --surface:#1b1b1b; --text:#ededed; --text2:#afafaf; --line:#262626;
+  --red:#f0554a; --blue:#3f8cf0; --gr:#939393;
+  --col:45rem; --pad:clamp(16px,5vw,32px); --edge:clamp(0px,5vw,88px);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,"Apple Color Emoji",Arial,sans-serif,"Segoe UI Emoji","Segoe UI Symbol";
+  font-size:1.0625rem;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:underline;text-decoration-color:#6e6e6e;text-decoration-thickness:1px;text-underline-offset:.2em}
+a:hover{color:#fff;text-decoration-color:currentColor}
+a:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:2px}
+
+/* title screen: a chat home screen that fills the window. Title over a composer pill, scroll cue at the bottom. */
+.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:center;padding:2rem var(--pad) 5.5rem}
+.home{margin:0 auto;width:100%;max-width:var(--col);text-align:center}
+.hero h1{margin:0 0 1.9rem;font-weight:500;font-size:clamp(1.8rem,2.6vw + 1.1rem,3.1rem);line-height:1.16;letter-spacing:-.022em;color:#fff;text-wrap:balance}
+.composer{display:flex;align-items:center;gap:.8rem;min-height:56px;padding:.55rem .65rem .55rem 1.1rem;background:var(--surface);border-radius:28px;text-align:left}
+.composer svg{display:block;flex:none}
+.composer .dek{flex:1;margin:0;font-size:1rem;line-height:1.4;position:relative}
+.dek .caret{display:inline-block;width:1.5px;height:1.15em;margin:0 -1px 0 -.5px;vertical-align:-.2em;background:var(--text);animation:blink 1.06s steps(1) infinite}
+.dek .tx{white-space:pre-wrap}
+.dek .caret.busy{animation:none}
+.dek .sel{background:#2f65c2;color:#fff}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.dek .caret{display:none}}
+.composer .go{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#fff;color:#000}
+.composer .go:hover{background:#d9d9d9;color:#000}
+.hero .by{margin:1rem 0 0;font-size:.8125rem;line-height:1.5;color:var(--text2)}
+.cue{position:absolute;left:50%;bottom:1.4rem;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.25rem;font-size:.8125rem;line-height:1.4;color:#757575;text-decoration:none;white-space:nowrap;transition:opacity .45s}
+.cue.gone{opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.cue{transition:none}}
+.cue:hover{color:var(--text2)}
+.cue svg{display:block}
+figure{margin-left:0;margin-right:0}
+
+/* one centered column, as in a chat thread. Left-right panels and .wide figures use the full page width, inset by --edge. */
+main{padding:0 var(--pad)}
+section{padding-top:clamp(7rem,24vh,16rem)}
+#opening,#hundred{padding-top:clamp(4rem,10vh,7rem)}
+section>*,section>figure{max-width:var(--col);margin-left:auto;margin-right:auto}
+section>.scrolly,section>.pair,section.split>h2,section>.wide{max-width:none;margin-left:var(--edge);margin-right:var(--edge)}
+h2{font-weight:600;font-size:clamp(1.45rem,1vw + 1.15rem,1.9rem);line-height:1.2;letter-spacing:-.015em;margin-top:0;margin-bottom:.8em;color:#fff}
+.prose p{margin:0 0 1.15em}
+.vh{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+figure{margin-top:0;margin-bottom:0}
+/* Every chart opens with a small title that says what is plotted (.ct), then the details in caption type (.ci).
+   A figure with more than one view stacks one pair per view (.cv), and the chart code picks one through data-view. */
+figcaption{margin:0 0 .85rem;max-width:48rem}
+figcaption .ct{display:block;font-size:1rem;line-height:1.35;font-weight:500;color:var(--text)}
+figcaption .ci{display:block;font-size:.8125rem;line-height:1.5;color:var(--text2);margin-top:.2rem}
+figcaption.multi{display:grid}
+.multi .cv{grid-area:1/1;opacity:0;visibility:hidden;transition:opacity .4s,visibility .4s}
+figure:not([data-view="1"]) .cv[data-v="0"],figure[data-view="1"] .cv[data-v="1"]{opacity:1;visibility:visible}
+@media (prefers-reduced-motion:reduce){.multi .cv{transition:none}}
+.plot svg{display:block;overflow:visible}
+.wide,.inset{margin-top:2.2rem;margin-bottom:2.4rem}
+figure[data-fig="topics"],figure[data-fig="iwa"]{margin-top:4.5rem;margin-bottom:5rem}
+figure[data-fig="pics"]{margin-top:3.6rem;margin-bottom:4rem}
+
+/* scroll-driven sections */
+.scrolly{display:grid;grid-template-columns:minmax(0,28rem) minmax(0,1fr);column-gap:clamp(1.5rem,4vw,4rem);align-items:start}
+.scrolly .steps{order:-1}
+.scrolly.flip{grid-template-columns:minmax(0,1fr) minmax(0,28rem)}
+.scrolly.flip .steps{order:0}
+.sticky{position:sticky;top:7vh}
+.step{min-height:76vh;display:flex;flex-direction:column;justify-content:center}
+.step:first-child{justify-content:flex-start;min-height:60vh}
+.step p{margin:0 0 1.15em}
+/* paced sections: each paragraph travels a full screen before the next arrives. On desktop the chart is centered
+   in the window, and it stays pinned until the last block has risen level with its top. Then both leave together. */
+.paced .step{min-height:100vh;justify-content:center}
+.paced .step:first-child{min-height:120vh}
+.paced .steps::after{content:"";display:block;height:60vh}
+#hundred .scrolly{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+@media (min-width:860px){
+  .paced .sticky{top:0;height:100vh;display:flex;flex-direction:column;justify-content:center}
+  .paced .sticky figure{width:100%}
+  .paced .step.low:first-child{min-height:0;height:var(--fb,82vh);justify-content:flex-end;margin-bottom:var(--lg,25vh)}
+  .paced .step.low .say>:last-child{margin-bottom:0}
+  /* no space after the last block: it and the chart leave the screen together. In hundred that happens with the
+     block centered in the window. Elsewhere the block first rises until its top is level with the top of the
+     chart (--ft, set by the chart code), and --lp keeps the usual gap above it. */
+  .paced .steps::after{height:0}
+  .paced:not(#hundred) .step:last-child{justify-content:flex-start;padding-top:var(--lp,25vh);min-height:calc(var(--lp,25vh) + 100vh - var(--ft,12vh))}
+  /* a pinned chart ends with empty space under it, so the section after it needs less of its own */
+  /* after hundred the space under its last block (--tail) already is the gap, so crowd makes up only the difference, to 1.4 times the usual gap */
+  #crowd{padding-top:max(0px,calc(clamp(7rem,24vh,16rem)*1.4 - var(--tail,0px)));margin-top:min(0px,calc(clamp(7rem,24vh,16rem)*1.4 - var(--tail,0px)))}
+  #desk,#pictures{padding-top:clamp(3rem,13vh,8.5rem)}
+  #women{padding-top:clamp(1.5rem,5vh,3.5rem)}
+}
+
+/* chart beside text, no pinning */
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,28rem);column-gap:clamp(1.5rem,4vw,4rem);align-items:start}
+/* crowd: two equal panels. The ranking line fills the left one, and the text takes half of the right one. */
+.duo{grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:0}
+.duo-text{max-width:50%}
+.duo .prose p:last-child{margin-bottom:0}
+/* its title sits at the top of the panel, just left of the first labels (the chart code sets how far),
+   unless the panel is too narrow (.capflow) */
+.duo figure{position:relative}
+.duo figure:not(.capflow) figcaption{position:absolute;right:0;top:0;max-width:15rem;margin:0}
+
+/* Each section ends the way a reply does in a chat thread: a row of message actions, then a soft rule. Decorative only. */
+.acts{display:flex;gap:1.15rem;margin-top:.2rem;padding-bottom:1.6rem;border-bottom:1px solid var(--line);color:var(--text2)}
+.acts svg{display:block;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.duo .acts{margin-top:1.3rem}
+
+.end{font-size:.875rem;line-height:1.6;margin-top:4.5rem;padding-bottom:5rem}
+.end h3{font-weight:600;font-size:1rem;margin:2.4em 0 .5em;color:#fff}
+.end h3:first-child{margin-top:0}
+.end ol{padding-left:1.4em;margin:0}
+.end li{margin:0 0 .45em}
+
+@media (prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}}
+@media (max-width:859px){
+  body{font-size:1rem}
+  .scrolly,.scrolly.flip{display:block}
+  section{padding-top:clamp(4.5rem,13vh,7rem)}
+  section>.scrolly,section>.pair,section.split>h2,section>.wide{max-width:var(--col);margin-left:auto;margin-right:auto}
+  /* the pinned chart hangs at the top of the screen with room above and below it, and no rule under it */
+  .sticky{top:0;z-index:2;background:var(--bg);margin:0 calc(var(--pad)*-1);padding:1.25rem var(--pad) 1.15rem}
+  .sticky figcaption{margin-bottom:.4rem}
+  .sticky figcaption .ct{font-size:.875rem}
+  .sticky figcaption .ci{display:none}
+  .step,.step:first-child{min-height:64vh;justify-content:center}
+  .paced .step{min-height:80vh}
+  .paced .step:first-child{min-height:75vh}
+  /* the last block is not centered in a tall step, and only a little space follows it, so the next section is close */
+  .paced .step:last-child{min-height:0;justify-content:flex-start;padding-top:20vh}
+  .paced .steps::after{height:18vh}
+  /* chart beside text becomes chart between paragraphs: the text wrappers dissolve, and order places the figure.
+     In crowd it follows the second paragraph, in tell the first. */
+  .pair{display:flex;flex-direction:column}
+  .pair .prose,.duo-text{display:contents}
+  .pair figure{order:1;margin:.7rem 0 2.2rem}
+  #crowd .prose p:nth-child(n+3),#crowd .acts{order:2}
+  #tell .prose>:nth-child(n+3){order:2}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-copy" viewBox="0 0 20 20"><rect x="3" y="7" width="10" height="10" rx="2.5"/><path d="M7 7V5.5A2.5 2.5 0 0 1 9.5 3h5A2.5 2.5 0 0 1 17 5.5v5a2.5 2.5 0 0 1-2.5 2.5H13"/></symbol>
+  <symbol id="i-read" viewBox="0 0 20 20"><path d="M3 8v4h2.6l4 3.3V4.7L5.6 8H3z"/><path d="M12.6 7.6a3.4 3.4 0 0 1 0 4.8"/><path d="M14.9 5.3a6.6 6.6 0 0 1 0 9.4"/></symbol>
+  <symbol id="i-share" viewBox="0 0 20 20"><path d="M10 12.5V3.2M6.5 6.5 10 3l3.5 3.5"/><path d="M4 10.5v4A2.5 2.5 0 0 0 6.5 17h7a2.5 2.5 0 0 0 2.5-2.5v-4"/></symbol>
+  <symbol id="i-more" viewBox="0 0 20 20"><g fill="currentColor" stroke="none"><circle cx="4.5" cy="10" r="1.3"/><circle cx="10" cy="10" r="1.3"/><circle cx="15.5" cy="10" r="1.3"/></g></symbol>
+</defs></svg>
+
+<header class="hero">
+  <div class="home">
+    <h1>How Indonesia Uses ChatGPT Differently</h1>
+    <div class="composer">
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10 3.5v13M3.5 10h13"/></svg>
+      <p class="dek"><span class="vh">A data story of how Indonesians work more (and chat less) with ChatGPT</span><span aria-hidden="true"><span class="tx">A data story of how Indonesians work more (and chat less) with ChatGPT</span></span></p>
+      <a class="go" href="#opening" aria-label="Start reading"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12M4.5 10.5 10 16l5.5-5.5"/></svg></a>
+    </div>
+    <p class="by">by <a href="https://akbarsaputra.com/">Akbar Saputra</a></p>
+  </div>
+  <a class="cue" href="#opening">Keep scrolling<svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7.5 10 13l5.5-5.5"/></svg></a>
+</header>
+
+<main>
+
+<section id="opening">
+  <div class="prose lede">
+    <p>Two years ago, about half of what the world typed into ChatGPT was work. Today it is less than a third. People still ask it to fix an email, but more and more they ask what to cook, how to lose weight, or whether a message from a friend sounded angry. The chatbot became less of a workplace tool and more of a life assistant.</p>
+    <p>Indonesia made much less of that move. The world's work share fell from 49% to 31%. Indonesia's held near 40%, a share that has hardly changed since late 2024. And writing, which the rest of the world has been drifting away from, remains tied for the most common thing Indonesians ask ChatGPT to help with.</p>
+  </div>
+  <figure class="inset" data-fig="hero"><figcaption><span class="ct">Share of ChatGPT messages classified as work-related</span><span class="ci">Quarterly averages, mid-2024 to mid-2026.</span></figcaption><div class="plot"></div></figure>
+  <div class="prose">
+    <p>This story follows that difference through <a href="https://openai.com/signals/data-download/">OpenAI Signals</a>, the company's own usage data: a monthly sample of a million consumer messages, sorted into categories by automated classifiers and published as country-level shares from July 2024 to September 2026. Indonesia is compared throughout with the world and with the average of its Southeast Asian neighbors. The data shows what Indonesians do with ChatGPT. To explain why, this story draws on published surveys, official statistics, and news reports.</p>
+  </div>
+  <div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div>
+</section>
+
+<section id="hundred" class="split paced">
+  <div class="scrolly" data-for="grid">
+    <div class="sticky"><figure data-fig="grid"><div class="plot"></div></figure></div>
+    <div class="steps">
+      <div class="step low" data-step="0"><div class="say"><h2>Imagine these 100 boxes are 100 messages sent from Indonesia to ChatGPT</h2><p>We shrink everything Indonesia sent to ChatGPT between July and September 2026 down to one hundred messages, one box for each percent. Sort the boxes a few different ways, and you'll start to see a picture of the country's ChatGPT users from different angles.</p></div></div>
+      <div class="step" data-step="1"><div class="say"><p>We start by sorting them by topic. Twenty-eight messages ask for help with writing, such as drafting, editing, translating, or summarizing texts. Another twenty-eight ask for practical guidance, a category that covers how-to advice and tutoring. Fourteen messages seek some information. Ten messages involve images and media. The remaining twenty messages are personal talk, technical assistance, and other topics.</p><p>A <a href="https://www.nber.org/papers/w34255">2025 study of ChatGPT use worldwide</a> found the same three uses at the top, where they make up nearly 80% of conversations. What differs in Indonesia is the order: writing shares first place, and looking things up is a distant third.</p></div></div>
+      <div class="step" data-step="2"><div class="say"><p>Now sort the same hundred by purpose. Forty messages are part of someone's work.</p><p>That is more than everywhere else: globally, only thirty one messages are related to work, while across Indonesia's Southeast Asian neighbors, the average is thirty three messages.</p><p>Something to notice: OpenAI's automated classifiers defined "work" pretty broadly. A second label, <a href="https://openai.com/signals/data-download/">published only for the world as a whole</a>, separates jobs from school. By that count, twenty of the world's hundred are work and another twelve are schoolwork. This means that some of Indonesia's forty messages here may be school homework too.</p></div></div>
+      <div class="step" data-step="3"><div class="say"><p>Let's move on to sort them by who is writing. OpenAI does not ask users their gender. It only infers it from first names that are overwhelmingly feminine or masculine.</p><p>By that method, sixty-one of the hundred messages sent by Indonesia come from people with feminine names. Meanwhile, the world sends fifty-two messages, close to an even split.</p><p>But it was not always this even. ChatGPT's early users were disproportionately men, and the gap has narrowed sharply since, <a href="https://www.nber.org/papers/w34255">the same study found</a>. In Indonesia it had already flipped by July 2024, when this data begins.</p></div></div>
+      <div class="step" data-step="4"><div class="say"><p>Lastly, let's sort them by age. Forty-four messages come from adults under 25, and eighty-one from adults under 35.</p><p>Globally, thirty of a hundred messages come from adults under 25, and thirty-seven messages on average in Southeast Asia. These are ages that users reported themselves, and <a href="https://openai.com/signals/data-download/">anyone under 18 is left out</a>, so the youngest users are missing from every one of these counts.</p><p>Now that we see how a hundred messages form a picture when sorted, it has to be noted that the data counts each trait separately. Thus, the data can't say whether these highlighted numbers are the same messages.</p></div></div>
+      <div class="step" data-step="5"><div class="say"><h2>Let's dissect these numbers</h2><p>Now we know that forty of Indonesia's hundred messages are part of someone's work, that sixty-one come from people with feminine first names, and that forty-four come from adults under 25. Each number sits well away from the world's, and the rest of this story digs into them one at a time. It starts with how much Indonesia uses ChatGPT at all. Then it follows the work: why Indonesia's share stayed while the world's share fell, what kind of work it is made of, and where it seems to come from. After that, it looks at the people behind these messages, as well as how are ChatGPT's young and female users changing over time, before we wrap up with one concluding change that is happening now.</p><div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="crowd" class="split">
+  <div class="pair duo">
+    <figure data-fig="percap"><figcaption><span class="ct">Rank by messages per capita</span><span class="ci">Among 173 countries, July to September 2026. Each tick is a country. Southeast Asian countries in blue.</span></figcaption><div class="plot"></div></figure>
+    <div class="duo-text">
+      <h2>Where does Indonesia rank in the use of ChatGPT?</h2>
+      <div class="prose">
+        <p>Let's start with a sense of scale: Indonesia is the world's fourth most populous country, with about <a href="https://databoks.katadata.co.id/en/demographics/statistics/6d7538c66b378a7/10-most-populous-countries-in-the-world-october-2026">288 million people</a>. OpenAI has said it is one of ChatGPT's five largest markets by weekly users, and that the number <a href="https://www.marketing-interactive.com/openai-expands-affordable-chatgpt-go-plan-to-indonesia">tripled in the year to September 2025</a>.</p>
+        <p>Per person, though, Indonesia is a light user. OpenAI ranks countries by messages per capita, and it publishes the order but not the counts behind it. In the third quarter of 2026 Indonesia placed 117th of 173 countries. That means 116 countries sent more messages per person, while the other 56 countries sent fewer. It has stayed between 112th and 119th since early 2025.</p>
+        <p>So this is a very large crowd in which each person sends relatively few messages. Seems not particularly special, right? Not really. As we move forward, we'll see that what sets Indonesia apart is not how much it uses ChatGPT: it is what the messages are for.</p>
+      </div>
+      <div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div>
+    </div>
+  </div>
+</section>
+
+<section id="drift" class="split paced">
+  <div class="scrolly" data-for="work">
+    <div class="sticky"><figure data-fig="work" data-view="0"><figcaption class="multi"><span class="cv" data-v="0"><span class="ct">Share of messages classified as work-related</span><span class="ci">Quarterly averages. Gray lines are the 137 other countries with complete data.</span></span><span class="cv" data-v="1"><span class="ct">Change in the work-related share of messages</span><span class="ci">July to December 2024 against April to September 2026, in percentage points. Each dot is one of 138 countries. <strong>Hover a dot for the country.</strong></span></span></figcaption><div class="plot"></div></figure></div>
+    <div class="steps">
+      <div class="step low" data-step="0"><div class="say"><h2>Do Indonesians still use ChatGPT for work?</h2><p>Yes, and that is what makes them unusual. Almost everywhere else, work has become a smaller part of what people do with ChatGPT. That does not mean people work with it less. In the middle of 2024, work accounted for 48.9% of consumer ChatGPT messages worldwide. By the third quarter of 2026 that share stood at 30.7%. Each gray line here is one country, and nearly all of them slope the same way.</p><p>And there's a study that might explain why saying that ChatGPT is being used less for work is actually misleading. Economists at OpenAI, Duke, and Harvard documented the first half of this slide in a <a href="https://www.nber.org/papers/w34255">2025 working paper</a>. It turned out, people did not stop working with ChatGPT. Personal use simply grew faster, from 53% of all messages to more than 70%, reducing the work share.</p></div></div>
+      <div class="step" data-step="1"><div class="say"><p>Southeast Asia moved with the world. Averaged across nine of Indonesia's neighbors, the work share fell from 44.1% to 32.6%.</p><p>All nine fell, though not equally. Singapore, the region's heaviest user by far, dropped the most, from 67.7% to 42.9%. Malaysia, Brunei, and Myanmar each lost about 16 points. Thailand, Cambodia, and Laos lost about 7, and Vietnam and the Philippines lost the least, at 5 and 4.</p></div></div>
+      <div class="step" data-step="2"><div class="say"><p>Indonesia started out following everyone else. Its work share dropped from 45.2% in mid-2024 to 35.9% in early 2025.</p><p>Then it stopped falling. It has moved between 36% and 43% ever since, up one quarter and down the next, with no downward drift.</p><p>The rest of the world kept sliding past it. In the second half of 2024, Indonesia ranked around 78th on this measure among roughly 150 countries. Over April to September 2026 it ranked 4th of 145.</p></div></div>
+      <div class="step" data-step="3"><div class="say"><p>Another way to see this is to compare each country's first six months in the data with its last six. Here, every dot is a country, placed by how many points of work share it lost.</p><p>The typical country lost 14.8 points. The world as a whole lost 15.2, and Southeast Asia lost 9.8. Indonesia lost only 1.5 points. Of 138 countries with complete data, only one held its share more tightly than Indonesia.</p><div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="desk">
+  <h2>What do Indonesians use ChatGPT for?</h2>
+  <div class="prose">
+    <p>What kept Indonesia's work share up? Mostly one thing: writing.</p>
+    <p>In mid-2024, writing was the most common use of ChatGPT worldwide, about a third of all messages. Since then the world's writing share has fallen to 21.2%. Indonesia's has barely moved: 30.9% then, 28.5% now.</p>
+    <p>The region deserves credit here too. Southeast Asia has always written more than the world, and its average, 29.3%, is now level with Indonesia's. But the region got there by falling eight points. Indonesia got there by standing still.</p>
+  </div>
+  <figure class="wide" data-fig="topics"><figcaption><span class="ct">Share of all messages by topic</span><span class="ci">Quarterly averages, mid-2024 to mid-2026. End values in percent.</span></figcaption><div class="plot"></div></figure>
+  <div class="prose">
+    <p>Where Indonesia and Southeast Asia diverge from the world is search. Worldwide, "seeking information" grew from 16.6% to 20.1% of messages as ChatGPT became a place to look things up. In Indonesia it shrank from 17.8% to 13.8%, the eighth-lowest share among 146 countries. Its neighbors are not far above, at 14.9%.</p>
+    <p>This shows that while much of the world increasingly uses ChatGPT to look things up, in Indonesia it is still mostly a desk where people write things.</p>
+  </div>
+  <div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div>
+</section>
+
+<section id="tell" class="split">
+  <div class="pair">
+    <figure data-fig="ade"><figcaption><span class="ct">Work-related messages that are "doing" and "expressing"</span><span class="ci">Share of each country's work-related messages, April to September 2026, 119 countries. The remainder is "asking". <strong>Hover a dot for the country.</strong></span></figcaption><div class="plot"></div></figure>
+    <div class="prose">
+      <h2>Do Indonesians ask ChatGPT, or tell it what to do?</h2>
+      <p>OpenAI's classifiers also sort every message by intent. "Asking" means seeking information or advice. "Doing" means handing over a task and expecting an output, whether it's a draft, a table, or a translation. "Expressing", meanwhile, is neither: it's simply just a thought or a feeling, the way anyone would in a journal.</p>
+      <p>Among Indonesia's work messages, 53.6% are doing. That is 7th of 119 countries, against 46.5% for the world and 48.1% for the region. Expressing, at 15.7%, is the second-lowest share anywhere. Japan sits at the opposite corner of the chart, where almost three in ten work messages expressed a thought or a feeling.</p>
+      <p>The global trend runs away from doing. Its share of the world's work messages fell from 52.7% to 46.4% in two years. In Indonesia it started at 52.6% and ended at 53.5%.</p>
+      <p>In simple words, when Indonesians use ChatGPT for work, they mostly instruct it to make something. They ask for information or advice about as often as people elsewhere, and they share a thought or a feeling much less often.</p>
+      <div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div>
+    </div>
+  </div>
+</section>
+
+<section id="campus">
+  <h2>What kind of work do Indonesians bring to ChatGPT?</h2>
+  <div class="prose">
+    <p>A separate dataset breaks each country's work messages into a few hundred activities borrowed from O*NET, the U.S. Labor Department's catalog of what people do in their jobs. Editing text is among the largest in every country. It is what comes after that sets Indonesia apart.</p>
+    <p>Indonesia ranks first among 84 countries in the share of work messages spent developing research plans or methods, at about five times the median country's rate. It ranks first in presenting research, second in evaluating scholarly work and in analyzing scientific data, and third in preparing informational or teaching materials.</p>
+  </div>
+  <figure class="wide" data-fig="iwa"><figcaption><span class="ct">Work activities, as a multiple of the median country's share</span><span class="ci">Share of each country's work-related messages in selected activities, average of Q4 2025 to Q3 2026, on a log scale. Each mark is one of 84 countries, a few of which fall below the scale. Red is Indonesia. Blue is the average of Malaysia, the Philippines, Singapore, Thailand, and Vietnam. <strong>Hover a mark for the country.</strong></span></figcaption><div class="plot"></div></figure>
+  <div class="prose">
+    <p>Together with two teaching activities, these make up 18.0% of Indonesia's work messages. The median country's figure is 9.3%, and the Southeast Asian average is 10.9%. These read like a description of campus life: planning research, reviewing scholarly work, presenting findings, or preparing lessons.</p>
+    <p>But there's a caution. The country-level classifier knows only "work" and "not work". A student drafting a thesis proposal and a lecturer preparing a syllabus can both land in the work column, and the published data cannot separate them.</p>
+    <p>Other evidence points the same way. Indonesia has more than <a href="https://data.goodstats.id/statistic/10-program-studi-dengan-jumlah-mahasiswa-terbanyak-2025-0asf3">ten million university students</a>, and the largest field of study, with about 2.2 million of them, <a href="https://data.goodstats.id/statistic/pendidikan-jadi-jurusan-paling-diminati-mahasiswa-indonesia-2025-rGf02">is education</a>. In <a href="https://tirto.id/makin-marak-siswa-pakai-ai-untuk-mengerjakan-tugas-gZax">a May 2024 survey of 1,501 high school and university students</a>, 86% said they used AI for assignments at least once a month, most often to summarize and to write essays.</p>
+    <p>Then there is <em>skripsi</em>, the long written thesis tthat Indonesian undergraduates have traditionally had to write to earn their degree. A 2023 ministerial regulation lets study programs <a href="https://www.hukumonline.com/berita/a/skripsi-tak-lagi-wajib--begini-respons-dekan-fh-unpad-dan-dekan-fh-uii-lt64f3772b7f3fa">accept a prototype or a project instead</a>, though the ministry stressed that the thesis itself <a href="https://jabar.antaranews.com/berita/466284/kemendikbudristek-tegaskan-skripsi-tidak-dihapus-hanya-diubah-syarat-kelulusan-beragam">was not abolished</a>. Teachers are part of the picture as well. In one community program in Gresik, East Java, students from Universitas Airlangga <a href="https://unair.ac.id/ringankan-tugas-administrasi-guru-mahasiswa-unair-integrasikan-ai-ke-sekolah/">trained primary school teachers</a> to draft their teaching modules with AI.</p>
+  </div>
+  <div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div>
+</section>
+
+<section id="young" class="split paced">
+  <div class="scrolly" data-for="age">
+    <div class="sticky"><figure data-fig="age"><figcaption class="multi"><span class="cv" data-v="0"><span class="ct">Share of messages from adults aged 18 to 24</span><span class="ci">By self-reported age, adults only. Quarterly averages, and monthly for Indonesia in the close-up.</span></span><span class="cv" data-v="1"><span class="ct">Share of messages by age group</span><span class="ci">July to September 2026, adults who reported an age. Each column is an age group, and the length of a bar is that group's share of the country's messages. Rows are ordered by the share from ages 18 to 24. Southeast Asia is the average of eight neighbors.</span></span></figcaption><div class="plot"></div></figure></div>
+    <div class="steps">
+      <div class="step low" data-step="0"><div class="say"><h2>How old are Indonesia's ChatGPT users?</h2><p>Young, for the most part. In mid-2024, adults aged 18 to 24 sent 62.9% of Indonesia's messages.</p><p>That share has since fallen to 43.8%, as it has fallen everywhere, because older users have joined. It is still well above Southeast Asia's 37.0% and the world's 30.3%.</p></div></div>
+      <div class="step" data-step="1"><div class="say"><p>Look at the months instead of the quarters, and a rhythm appears. In each of the three Septembers in the data, the under-25 share jumps: by 5.5 points in 2024, 2.2 in 2025, and 6.8 in 2026.</p><p>Indonesian universities usually open their academic year in the second half of August. At Universitas Gadjah Mada, for instance, lectures for the 2026 odd semester <a href="https://akademik.ugm.ac.id/wp-content/uploads/sites/35/2026/03/266-2026_KEPTOR_KALENDER_AKADEMIK.pdf">began on August 18</a>. September is the first full month of classes.</p></div></div>
+      <div class="step" data-step="2"><div class="say"><p>The growth is in the next bracket up. People aged 25 to 34 went from 23.6% of Indonesia's messages to 36.8%. That is what one would expect if early student users carried the habit into their first jobs, though the data cannot confirm it.</p><p>Adults 35 and older still send fewer than one message in five. Worldwide, more than one in three ChatGPT messages were sent by this age group.</p><p>Set beside other large countries, Indonesia looks like India and Nigeria: the youngest group is the largest one. In the United States, Germany, Japan, and South Korea, as in the world as a whole, the largest group is 25 to 34. Among 141 countries with age data for the quarter, Indonesia's under-25 share ranks 22nd.</p><div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="women" class="split paced">
+  <div class="scrolly flip" data-for="gender">
+    <div class="sticky"><figure data-fig="gender"><figcaption class="multi"><span class="cv" data-v="0"><span class="ct">Share of messages from users with typically feminine first names</span><span class="ci">Among users whose names could be classified. Quarterly averages.</span></span><span class="cv" data-v="1"><span class="ct">Share of messages from users with typically feminine first names, by topic</span><span class="ci">Among users whose names could be classified. July to September 2026. Only one of Indonesia's neighbors has complete data by topic, so there is no Southeast Asia average here.</span></span></figcaption><div class="plot"></div></figure></div>
+    <div class="steps">
+      <div class="step low" data-step="0"><div class="say"><h2>Are Indonesia's ChatGPT users mostly women?</h2><p>By OpenAI's first-name classifying methods, yes. Feminine names sent 53.4% of Indonesia's messages in July 2024, the first month of data. The world was then at 42.2% and did not cross the halfway mark until May 2025. The Southeast Asian average has hovered around that mark only since late 2025.</p><p>Indonesia stood at 60.7% in the third quarter of 2026, 6th among 107 countries with complete data.</p></div></div>
+      <div class="step" data-step="1"><div class="say"><p>The pattern holds topic by topic. In Indonesia, feminine names lead in all seven categories, including technical help, where they send 50.3% of messages against 37.7% worldwide.</p><p>Two cautions, though. The method counts only names that are more than 95% associated with one gender, and how well that covers Indonesian names is not documented. It also describes messages, not people.</p><p>Still, the direction fits what is known about Indonesian campuses, where women were <a href="https://data.goodstats.id/statistic/mahasiswa-perempuan-dominasi-pendidikan-tinggi-indonesia-pada-2025-SLgsB">55.9% of all university students</a> in 2025.</p><div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="pictures">
+  <h2>But is anything changing in how Indonesians use ChatGPT?</h2>
+  <div class="prose">
+    <p>Yes, and it is not about words. In early 2025, "creating visual designs or displays" was 2.7% of Indonesia's work messages. By the third quarter of 2026, it was 10.6%, second only to editing text. Coding or programming, once more than twice as common as design, fell from 6.1% to 3.0%.</p>
+  </div>
+  <figure class="wide" data-fig="pics"><figcaption><span class="ct">Share of work-related messages spent on visual design and on programming</span><span class="ci">Quarterly, early 2025 to mid-2026. Southeast Asia is the average of five neighbors. Work activities have no world series, so the median country stands in for the world.</span></figcaption><div class="plot"></div></figure>
+  <div class="prose">
+    <p>The turn began with a product launch. OpenAI released a new image generator inside ChatGPT <a href="https://gigazine.net/gsc_news/en/20250404-chatgpt-users-generated-over-700m-images/">on March 25, 2025</a>, and the following month images jumped from 3.9% to 10.5% of all Indonesian messages. The first wave did not last. By December 2025 images had fallen back to 4.1% of Indonesian messages. Then the share climbed again, and by the third quarter of 2026 it was back above 10%. This time work use rose with it.</p>
+    <p>This is a global shift, and Indonesia is a little ahead of it. Design stands at 7.5% in the median country and at 8.8% across the region. In both, it overtook programming at the start of 2026, just as it did in Indonesia.</p>
+  </div>
+  <div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div>
+</section>
+
+<section id="closing">
+  <h2>So, how does Indonesia use ChatGPT differently?</h2>
+  <div class="prose">
+    <p>Start with what the world did. In two years, the work-related share of ChatGPT messages fell from 48.9% to 30.7% worldwide, as people brought it more of their personal lives and more of their searches. Indonesia's share dipped early and then held near 40%. Of 138 countries with complete data, only one country held its share more tightly.</p>
+    <p>What held it up is writing. Writing still takes 28.5% of Indonesia's messages, against 21.2% for the world, and Indonesians at work instruct ChatGPT to do a task far more often than they ask it a question. The tasks that stand out are the ones tied heavily on campus lives: research plans, scholarly reviews, or teaching materials.</p>
+    <p>That is also where the data reaches its first limit. Its classifier knows only "work" and "not work", so a student's thesis and a lecturer's syllabus land in the same column, and nothing published can separate them. Our reading that tied this to campus lives rests on that pattern and on outside surveys, not on a count of students.</p>
+    <p>The people behind the messages point the same way. Adults under 25 send 43.8% of them, and people with feminine first names send 60.7%. Both figures come with conditions. Age covers only adults who reported one, so users under 18 are missing. Gender is inferred from first names, by a method whose fit for Indonesian names is not documented. And each trait is counted on its own. The data cannot say how many of the young users are women, or how many of either group are the ones doing the writing.</p>
+    <p>The data also leaves out some things altogether. Every figure here is a share of messages, so apart from the per-capita rank (117th of 173), nothing measures how many Indonesians use ChatGPT or how often. Only consumer accounts are included, so use through business and corporate accounts is not counted. And a single country's monthly figures are noisy. Indonesia's work share moves by about four points from month to month, which is why this story leans on quarterly and six-month averages.</p>
+    <p>For now, the difference is plain. The world's ChatGPT has become a life companion and a search engine. Indonesians use ChatGPT mostly as if it were a work desk: a place where students, teachers, and young office workers bring something unfinished and ask for help finishing it.</p>
+    <p>Whether that is a stage every country passes through, or the lasting habit of a young, studying, writing nation, is something the next two years of data will show.</p>
+  </div>
+  <div class="acts" aria-hidden="true"><svg><use href="#i-copy"/></svg><svg><use href="#i-read"/></svg><svg><use href="#i-share"/></svg><svg><use href="#i-more"/></svg></div>
+
+  <div class="end">
+    <h3>Method</h3>
+    <p>All charts use <a href="https://openai.com/signals/data-download/">OpenAI Signals v3.0</a>, released under a CC BY 4.0 license, covering July 2024 to September 2026. "World" is the global series published by OpenAI. Where no global series exists (work activities and per-capita rank), the median country is used instead. "Southeast Asia" is a simple average of Indonesia's neighbors with complete data in each file, excluding Indonesia: nine countries for work and topics, eight for age, seven for intent, six for gender, and five for work activities. It is not weighted by population or by usage. Ranks state the number of countries with complete data for the period.</p>
+    <p>Created by <a href="https://akbarsaputra.com/">Akbar Saputra</a> using JavaScript (D3.js). Data is processed and analyzed in Excel and Python. Planning, researching, code-debugging, and copywriting are assisted by GPT-6.1 Sol (Extra High)</p>
+    <h3>Sources</h3>
+    <ol>
+      <li>OpenAI, <a href="https://openai.com/signals/data-download/">OpenAI Signals v3.0, data and methodology</a>, 2026.</li>
+      <li>Aaron Chatterji and others, <a href="https://www.nber.org/papers/w34255">“How People Use ChatGPT,”</a> NBER Working Paper 34255, 2025.</li>
+      <li>Databoks, <a href="https://databoks.katadata.co.id/en/demographics/statistics/6d7538c66b378a7/10-most-populous-countries-in-the-world-october-2026">“10 Most Populous Countries in the World October 2026.”</a></li>
+      <li>Marketing-Interactive, <a href="https://www.marketing-interactive.com/openai-expands-affordable-chatgpt-go-plan-to-indonesia">“OpenAI expands affordable ChatGPT Go plan to Indonesia,”</a> 2025.</li>
+      <li>GoodStats, <a href="https://data.goodstats.id/statistic/10-program-studi-dengan-jumlah-mahasiswa-terbanyak-2025-0asf3">student numbers</a>, <a href="https://data.goodstats.id/statistic/pendidikan-jadi-jurusan-paling-diminati-mahasiswa-indonesia-2025-rGf02">fields of study</a>, and <a href="https://data.goodstats.id/statistic/mahasiswa-perempuan-dominasi-pendidikan-tinggi-indonesia-pada-2025-SLgsB">students by gender</a>, 2025, from the ministry's higher education statistics.</li>
+      <li>Tirto, <a href="https://tirto.id/makin-marak-siswa-pakai-ai-untuk-mengerjakan-tugas-gZax">“Makin Marak Siswa Pakai AI untuk Mengerjakan Tugas,”</a> survey with Jakpat, 2024.</li>
+      <li>Hukumonline, <a href="https://www.hukumonline.com/berita/a/skripsi-tak-lagi-wajib--begini-respons-dekan-fh-unpad-dan-dekan-fh-uii-lt64f3772b7f3fa">on Permendikbudristek No. 53 of 2023</a>, and Antara, <a href="https://jabar.antaranews.com/berita/466284/kemendikbudristek-tegaskan-skripsi-tidak-dihapus-hanya-diubah-syarat-kelulusan-beragam">on the ministry's clarification</a>, 2023.</li>
+      <li>Universitas Airlangga, <a href="https://unair.ac.id/ringankan-tugas-administrasi-guru-mahasiswa-unair-integrasikan-ai-ke-sekolah/">“Ringankan Tugas Administrasi Guru, Mahasiswa UNAIR Integrasikan AI ke Sekolah.”</a></li>
+      <li>Universitas Gadjah Mada, <a href="https://akademik.ugm.ac.id/wp-content/uploads/sites/35/2026/03/266-2026_KEPTOR_KALENDER_AKADEMIK.pdf">academic calendar 2026/2027</a>.</li>
+      <li>Gigazine, <a href="https://gigazine.net/gsc_news/en/20250404-chatgpt-users-generated-over-700m-images/">on the first week of ChatGPT's image generator</a>, 2025.</li>
+    </ol>
+  </div>
+</section>
+</main>
+
+<script>/*__D3__*/</script>
+<script>
+const D=/*__DATA__*/;
+const INK='#ededed',DOT='#b9b9b9',RED='#f0554a',BLUE='#3f8cf0',GR='#939393',GRL='#4a4a4a',RULE='#262626',PAPER='#000000';
+const SANS='ui-sans-serif,-apple-system,system-ui,"Segoe UI",Helvetica,Arial,sans-serif';
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const narrow=()=>innerWidth<860;
+const ord=n=>{const s=['th','st','nd','rd'],v=n%100;return n+(s[(v-20)%10]||s[v]||s[0]);};
+const f1=v=>v.toFixed(1);
+const MIN='−';
+
+function svg(el,w,h){d3.select(el).selectAll('svg').remove();return d3.select(el).append('svg').attr('width',w).attr('height',h).attr('viewBox',`0 0 ${w} ${h}`);}
+function txt(g,s,x,y,o={}){
+  // note: true is an annotation: semibold, in the color of the thing it points at, with a halo
+  const t=g.append('text').attr('x',x).attr('y',y).attr('font-family',SANS).attr('font-size',o.size||(o.note?14:13.5)).attr('fill',o.fill||INK).attr('text-anchor',o.anchor||'start').attr('font-weight',o.weight||(o.note?600:400));
+  const lines=String(s).split('\n'),lh=o.lh||(o.note?1.25:1.2),halo=o.halo||(o.note?4:0);
+  lines.forEach((l,i)=>t.append('tspan').attr('x',x).attr('dy',i?`${lh}em`:0).text(l));
+  if(halo)t.attr('paint-order','stroke').attr('stroke',PAPER).attr('stroke-width',halo===true?4:halo).attr('stroke-linejoin','round');
+  return t;
+}
+function wrap(g,str,maxW,o){ // line breaks so that no line is wider than maxW, with the lines kept about equal
+  const probe=txt(g,'',0,0,o),sp=probe.select('tspan'),words=str.split(' ');
+  const fit=W=>{const lines=[];let cur='';words.forEach(wd=>{const t=cur?cur+' '+wd:wd;sp.text(t);if(cur&&probe.node().getComputedTextLength()>W){lines.push(cur);cur=wd;}else cur=t;});lines.push(cur);return lines;};
+  let best=fit(maxW);for(let W=maxW-6;W>maxW*0.5;W-=6){const l=fit(W);if(l.length>best.length)break;best=l;}
+  probe.remove();return best.join('\n');
+}
+function arrow(g,x1,y1,x2,y2,color,bend=0.25){
+  const mx=(x1+x2)/2,my=(y1+y2)/2,dx=x2-x1,dy=y2-y1,cx=mx-dy*bend,cy=my+dx*bend;
+  g.append('path').attr('d',`M${x1},${y1} Q${cx},${cy} ${x2},${y2}`).attr('fill','none').attr('stroke',color).attr('stroke-width',1.4).attr('stroke-linecap','round');
+  const a=Math.atan2(y2-cy,x2-cx),L=7;
+  g.append('path').attr('d',`M${x2-L*Math.cos(a-0.45)},${y2-L*Math.sin(a-0.45)} L${x2},${y2} L${x2-L*Math.cos(a+0.55)},${y2-L*Math.sin(a+0.55)}`).attr('fill','none').attr('stroke',color).attr('stroke-width',1.4).attr('stroke-linecap','round').attr('stroke-linejoin','round');
+}
+function ring(g,x,y,r,color){g.append('circle').attr('cx',x).attr('cy',y).attr('r',r).attr('fill','none').attr('stroke',color).attr('stroke-width',1.5);}
+function lab2(g,name,val,x,y,o={}){ // the label form used on every chart: the name in bold, then the value in brackets at regular weight
+  const t=g.append('text').attr('x',x).attr('y',y).attr('font-family',SANS).attr('font-size',o.size||14.5).attr('fill',o.fill||INK).attr('text-anchor',o.anchor||'start');
+  t.append('tspan').attr('font-weight',700).text(name);t.append('tspan').attr('font-weight',400).text(` (${val})`);
+  if(o.halo)t.attr('paint-order','stroke').attr('stroke',PAPER).attr('stroke-width',o.halo===true?4:o.halo).attr('stroke-linejoin','round');
+  return t;
+}
+function fit(t,w){ // nudges a label sideways so it stays inside a chart of width w
+  const b=t.node().getBBox(),dx=b.x<2?2-b.x:b.x+b.width>w-2?w-2-(b.x+b.width):0;if(dx)t.attr('x',+t.attr('x')+dx);return t;
+}
+function hover(s,pts,show,on){
+  // Lights up the point nearest the pointer (within 18px). One listener on the whole chart instead of one per dot,
+  // so a fast exit cannot leave a dot lit: leaving the chart, or moving away from every point, always clears it.
+  // pts: [{x,y,...}]. show(p) is called with the new point, or null. on(): optional, false while the view is hidden.
+  let cur=null;
+  const pick=ev=>{let best=null;if(!on||on()){const [mx,my]=d3.pointer(ev,s.node());let bd=18*18;pts.forEach(p=>{const d=(p.x-mx)**2+(p.y-my)**2;if(d<bd){bd=d;best=p;}});}
+    if(best!==cur){cur=best;show(best);}};
+  s.on('pointermove',pick).on('pointerdown',pick).on('pointerleave',()=>{if(cur){cur=null;show(null);}});
+}
+function dodge(items,gap){
+  items.sort((a,b)=>a.y-b.y);items.forEach(d=>d.ly=d.y);
+  for(let k=0;k<8;k++)for(let i=1;i<items.length;i++){const d=items[i].ly-items[i-1].ly;if(d<gap){const s=(gap-d)/2;items[i-1].ly-=s;items[i].ly+=s;}}
+  return items;
+}
+function axisY(g,y,ticks,x1,x2,suf){ticks.forEach(t=>{g.append('line').attr('x1',x1).attr('x2',x2).attr('y1',y(t)).attr('y2',y(t)).attr('stroke',RULE);txt(g,t+suf,x1-6,y(t)+4,{anchor:'end',fill:GR,size:12.5});});}
+function brk(g,x,y,dir){ // axis-break mark: two short slashes across an axis at (x,y). dir is 'x' or 'y', the axis it sits on
+  [-3,3].forEach(o=>g.append('path').attr('d',dir==='y'?`M${x-5},${y+o+2} L${x+5},${y+o-2}`:`M${x+o-2},${y+5} L${x+o+2},${y-5}`));
+}
+function lowStep(el,y){
+  // Tells the page where the plot ends inside the pinned area (--fb), so a .low first step can end level with it.
+  // y: where the drawing ends inside the plot, for a chart that does not fill its box. The default is the plot's bottom.
+  // Also sets the space under that block (--lg) to what a block centered in a full-screen step would leave,
+  // so the gap to the second block is the same as between any two later blocks.
+  // And for the last block: --ft is where the figure starts inside the pinned area, so the block can rise level
+  // with it before the two leave together, and --lp is the space above the block, again what centering would leave.
+  const sec=el.closest('section'),say=sec.querySelector('.step.low .say'),last=sec.querySelector('.step:last-child .say');
+  const r=el.getBoundingClientRect(),st=el.closest('.sticky').getBoundingClientRect().top;
+  sec.style.setProperty('--fb',Math.round((y==null?r.bottom:r.top+y)-st)+'px');
+  if(say)sec.style.setProperty('--lg',Math.max(0,Math.round((innerHeight-say.offsetHeight)/2))+'px');
+  sec.style.setProperty('--ft',Math.round(el.closest('figure').getBoundingClientRect().top-st-3)+'px');
+  const lp=last?Math.max(0,Math.round((innerHeight-last.offsetHeight)/2)):0;
+  sec.style.setProperty('--lp',lp+'px');
+  if(sec.id==='hundred'&&sec.nextElementSibling)sec.nextElementSibling.style.setProperty('--tail',lp+'px'); // its last block is centered, so this much space follows it
+}
+function axisLine(g,x0,yt,yb,x1,cut){
+  // The y-axis line and the baseline, drawn on every chart that has a numeric y-axis.
+  // cut: the axis does not start at zero, so it gets a break mark, and the origin is labeled 0.
+  const a=g.append('g').attr('fill','none').attr('stroke','#6b6b6b').attr('stroke-linecap','round');
+  a.append('path').attr('d',cut?`M${x0},${yt} V${yb-22} M${x0},${yb-12} V${yb} H${x1}`:`M${x0},${yt} V${yb} H${x1}`);
+  if(cut){brk(a,x0,yb-17,'y');txt(g,'0',x0-6,yb+4,{anchor:'end',fill:GR,size:12.5});}
+}
+function qlab(q){return q.replace(' 20',' \'');}
+function box(el,ratio,maxvh){const w=el.clientWidth;const h=Math.round(Math.min(innerHeight*(narrow()?0.42:maxvh),w*ratio));return [w,Math.max(h,250)];}
+
+const FIG={};
+function reg(id,build){FIG[id]={build,state:0,api:null};}
+function fig(id){return document.querySelector(`[data-fig="${id}"]`);}
+function draw(id){const el=fig(id)&&fig(id).querySelector('.plot');if(!el)return;const f=FIG[id];f.api=f.build(el)||{};if(f.api.set)f.api.set(f.state,false);}
+function setState(id,s){const f=FIG[id];if(!f||f.state===s)return;f.state=s;if(f.api&&f.api.set)f.api.set(s,true);}
+
+/* ---------- lede chart ---------- */
+let heroSeen=false; // the lines draw once, when the chart first scrolls into view
+reg('hero',el=>{
+  const w=el.clientWidth,sm=w<560,h=sm?230:270,s=svg(el,w,h),q=D.quarters.length;
+  const x0=34,yz=h-24,x=d3.scaleLinear([0,q-1],[x0+8,w-(sm?112:136)]),y=d3.scaleLinear([30,50],[yz-36,12]);
+  // The y-axis is cut between 0 and 30%. A break mark shows the cut, and 0, 30%, and 50% are labeled.
+  const ax=s.append('g').attr('fill','none').attr('stroke','#6b6b6b').attr('stroke-linecap','round');
+  ax.append('path').attr('d',`M${x0},2 V${yz-22} M${x0},${yz-12} V${yz} H${x(q-1)+4}`);brk(ax,x0,yz-17,'y');
+  [30,50].forEach(v=>{ax.append('line').attr('x1',x0-4).attr('x2',x0).attr('y1',y(v)).attr('y2',y(v));txt(s,v+'%',x0-8,y(v)+4,{anchor:'end',fill:GR,size:12.5});});
+  txt(s,'0',x0-8,yz+4,{anchor:'end',fill:GR,size:12.5});
+  const line=d3.line().x((d,i)=>x(i)).y(d=>y(d)).curve(d3.curveMonotoneX);
+  const S=[['World',D.work.world_q,GR,2.2],['Southeast Asia',D.work.sea_q,BLUE,2.2],['Indonesia',D.work.id_q,RED,3]];
+  const E=dodge(S.map(d=>({d,y:y(d[1][q-1])})),sm?19:21),hidden=[];
+  S.forEach((d,i)=>{
+    const p=s.append('path').attr('d',line(d[1])).attr('fill','none').attr('stroke',d[2]).attr('stroke-width',d[3]).attr('stroke-linecap','round');
+    const e=E.find(e=>e.d===d),t=txt(s,d[0],x(q-1)+10,e.ly+5,{fill:d[2],size:sm?14:15.5,weight:600});
+    if(!reduce&&!heroSeen){const L=p.node().getTotalLength();p.attr('stroke-dasharray',L).attr('stroke-dashoffset',L);t.attr('opacity',0);hidden.push([p,t,i]);}
+  });
+  txt(s,'mid-2024',x0,h-5,{fill:GR,size:12.5});txt(s,'mid-2026',x(q-1)+4,h-5,{fill:GR,size:12.5,anchor:'end'});
+  return {play(){hidden.forEach(([p,t,i])=>{p.transition().delay(150+i*450).duration(1200).ease(d3.easeCubicInOut).attr('stroke-dashoffset',0);
+    t.transition().delay(150+i*450+1000).duration(350).attr('opacity',1);});}};
+});
+
+/* ---------- one hundred messages ---------- */
+const TOPIC_NAME={'Writing':'Writing','Practical Guidance':'Practical guidance','Seeking information':'Looking things up','Multimedia':'Images and media','Self-expression':'Personal talk','Technical help':'Technical help','Other/Unknown':'Everything else'};
+reg('grid',el=>{
+  const [w,h]=box(el,1.02,0.78),s=svg(el,w,h),sm=w<520,T=D.topics.names,N=D.grid.t26,OFF='#2b2b2b',NOTE=38;
+  const B=[];T.forEach((t,ti)=>{for(let k=0;k<N[ti];k++)B.push({ti,k,i:B.length});});
+  const last=a=>Math.round(a[a.length-1]);
+  // t: the caption beside the three grids (layout C). d: the shorter caption over Indonesia's own grid (layout D).
+  const ST=[
+    {n:D.grid.work26,t:'of every 100 messages are part of someone\'s work',d:'are part of someone\'s work',w:last(D.work.world_q),s:last(D.work.sea_q)},
+    {n:D.grid.fem26,t:'of every 100 come from people with feminine first names',d:'come from people with feminine first names',w:last(D.gender.world_q),s:last(D.gender.sea_q)},
+    {n:D.grid.u25_26,t:'of every 100 come from adults under 25',d:'come from adults under 25',w:last(D.age.u25.world_q),s:last(D.age.u25.sea_q)}];
+  // layout A: one large 10 x 10 grid, against the left edge. The section heading sits in the text beside it.
+  const cA=Math.min((h-NOTE-8)/10,w/10,46),yA=(h-(cA*10+NOTE))/2;
+  // layout B: one row of boxes per topic
+  const labW=sm?118:176,lines=N.map(n=>Math.ceil(n/10)),gap=0.8,units=d3.sum(lines)+gap*(T.length-1);
+  const cB=Math.min((h-NOTE-10)/units,(w-labW-40)/10,30),topB=(h-(units*cB+NOTE))/2,gy=[];let acc=0;lines.forEach(n=>{gy.push(acc);acc+=n+gap;});
+  // layout C: Indonesia's grid with its caption, a wide gap, then Southeast Asia and the world side by side
+  const gap1=sm?30:Math.max(64,Math.min(130,w*0.21)),gap2=sm?10:22,labH=sm?24:30,ns=sm?44:56,cs=sm?13:15.5,cOpt={size:cs,weight:500};
+  let cC=Math.min((w-gap1-gap2)/30,24);
+  // the caption must stay over Indonesia's own column: beside the number on a wide chart, under it on a phone
+  const capW=sm?cC*10+gap1*0.5:cC*10+gap1*0.8-(ns*1.36);
+  ST.forEach(o=>{o.lines=wrap(s,o.t,capW,cOpt);});
+  const nl=d3.max(ST,o=>o.lines.split('\n').length),capH=sm?ns+nl*cs*1.2+4:Math.max(ns*0.9,nl*cs*1.2)+12;
+  cC=Math.min(cC,(h-capH-labH-NOTE-8)/10);
+  const yC=(h-(capH+labH+cC*10+NOTE))/2+capH+labH,xC=k=>k===0?0:cC*10+gap1+(k-1)*(cC*10+gap2);
+  // layout D: Indonesia three times over, one grid for each count, each under its own number and caption
+  const gapD=sm?12:Math.max(26,Math.min(52,w*0.07)),nsD=sm?34:46,csD=sm?12:14.5,dOpt={size:csD,weight:500};
+  let cD=Math.min((w-2*gapD)/30,22);
+  ST.forEach(o=>{o.dl=wrap(s,o.d,cD*10,dOpt);});
+  const nlD=d3.max(ST,o=>o.dl.split('\n').length),capHD=nsD+nlD*csD*1.2+12;
+  cD=Math.min(cD,(h-capHD-NOTE-8)/10);
+  const yD=(h-(capHD+cD*10+NOTE))/2+capHD,xD=k=>k*(cD*10+gapD);
+  const cell=(x,y,c,f)=>[x+c*(1-f)/2,y+c*(1-f)/2,c*f];
+  B.forEach(d=>{const r=Math.floor(d.i/10),col=d.i%10;
+    d.A=cell(col*cA,yA+r*cA,cA,0.86);
+    d.B=cell(labW+(d.k%10)*cB,topB+(gy[d.ti]+Math.floor(d.k/10))*cB,cB,0.82);
+    d.C=cell(col*cC,yC+r*cC,cC,0.84);
+    d.D=cell(col*cD,yD+r*cD,cD,0.84);});
+  const NP={A:[0,yA+cA*10+31],B:[labW,topB+units*cB+31],C:[0,yC+cC*10+31],D:[0,yD+cD*10+31]}; // where the small caption sits in each layout
+  lowStep(el,NP.A[1]+5); // the opening text ends level with the small caption under the first grid
+  const boxes=s.append('g').selectAll('rect').data(B).join('rect');
+  const note=txt(s,'July to September 2026. Each box is 1% of messages.',0,0,{size:13,fill:'#afafaf'});let noteW=note.node().getComputedTextLength();
+  if(noteW>w){note.attr('font-size',13*w/noteW);noteW=w;} // a wide font on a narrow phone: shrink it to the chart's width
+  if(NP.B[0]+noteW>w)NP.B[0]=Math.max(0,w-noteW); // on a phone it would run off the right edge from under the boxes, so it moves left
+  const lab=s.append('g');
+  T.forEach((t,ti)=>{const col=ti===0?RED:INK,yy=topB+gy[ti]*cB+cB/2+5;
+    txt(lab,TOPIC_NAME[t],labW-14,yy,{anchor:'end',size:sm?13.5:15.5,weight:ti===0?700:500,fill:col});
+    txt(lab,N[ti],labW+(((N[ti]-1)%10)+1)*cB+7,yy+(lines[ti]-1)*cB,{size:15,weight:700,fill:col});});
+  // Two more grids. In layout C they are Southeast Asia and the world. In layout D they are Indonesia's second and third counts.
+  const others=[1,2].map(k=>{const g=s.append('g').attr('opacity',0);return {g,k,r:g.selectAll('rect').data(d3.range(100)).join('rect').attr('fill',OFF)};});
+  const place=(sel,k,isD)=>{const c=isD?cD:cC,x0=isD?xD(k):xC(k),y0=isD?yD:yC,cc=cell(0,0,c,0.84);
+    return sel.attr('x',i=>x0+(i%10)*c+cc[0]).attr('y',i=>y0+Math.floor(i/10)*c+cc[1]).attr('width',cc[2]).attr('height',cc[2]);};
+  const cap=s.append('g');
+  function caption(o){cap.selectAll('*').remove();const top=yC-labH-capH,ls=sm?13:15;
+    txt(cap,o.n,0,top+ns*0.76,{size:ns,weight:600,fill:RED});
+    if(sm)txt(cap,o.lines,0,top+ns+cs*0.6,cOpt);else txt(cap,o.lines,ns*1.36,top+cs*0.95,cOpt);
+    txt(cap,'Indonesia',0,yC-9,{size:ls,weight:700,fill:RED});
+    lab2(cap,sm?'SE Asia':'Southeast Asia',o.s,xC(1),yC-9,{size:ls,fill:BLUE});
+    lab2(cap,'World',o.w,xC(2),yC-9,{size:ls,fill:GR});}
+  const capD=s.append('g').attr('opacity',0);
+  ST.forEach((o,k)=>{const top=yD-capHD;txt(capD,o.n,xD(k),top+nsD*0.78,{size:nsD,weight:600,fill:RED});txt(capD,o.dl,xD(k),top+nsD+csD*0.95,dOpt);});
+  return {set(st,anim){const T2=anim&&!reduce?750:0,isD=st>=5,key=st===0?'A':st===1?'B':isD?'D':'C',o=st>=2&&!isD?ST[st-2]:null;
+    boxes.transition().duration(T2).delay((d,i)=>T2?i*3:0).attr('x',d=>d[key][0]).attr('y',d=>d[key][1]).attr('width',d=>d[key][2]).attr('height',d=>d[key][2])
+      .attr('fill',d=>isD?(d.i<ST[0].n?RED:OFF):o?(d.i<o.n?RED:OFF):st===1&&d.ti===0?RED:DOT);
+    note.transition().duration(T2).attr('y',NP[key][1]).selectAll('tspan').attr('x',NP[key][0]);
+    lab.transition().duration(T2/2).attr('opacity',st===1?1:0);
+    if(o)caption(o);
+    others.forEach(g=>{place(g.r.transition().duration(T2),g.k,isD).attr('fill',i=>isD?(i<ST[g.k].n?RED:OFF):o?(i<(g.k===2?o.w:o.s)?(g.k===2?GR:BLUE):OFF):OFF);
+      g.g.transition().duration(T2).attr('opacity',o||isD?1:0);});
+    cap.transition().duration(T2).attr('opacity',o?1:0);capD.transition().duration(T2).attr('opacity',isD?1:0);}};
+});
+
+/* ---------- per-capita ranking, on a vertical line ---------- */
+reg('percap',el=>{
+  // One vertical line, rank 1 at the top. Position is proportional to rank, so distances along the line can be
+  // compared: 2nd to 49th is 47 countries, and looks it. The data has ranks only, so this is a scale of rank,
+  // not of usage. The line is long enough (5px a rank) that the dots of neighboring ranks do not touch.
+  // On a wide screen the heading and text beside it stay together as one block, centered on the line.
+  // Labels sit left of the line and move apart where they would collide, joined to their true position by a tick.
+  d3.select(el).selectAll('svg').remove();
+  const P=D.percap,n=P.length,two=!narrow(),text=el.closest('section').querySelector('.duo-text'),figure=el.closest('figure');
+  const L=(n-1)*5,y0=18,y1=y0+L;
+  // center the block of text on the line, or the line on the text if the text is the taller of the two
+  // the title sits at the top of the panel, a short gap left of the first labels, or above the line where the panel is too narrow for that
+  const cap=figure.querySelector('figcaption'),flow=!two||el.clientWidth<560,tops=[];
+  text.style.marginTop='';figure.style.marginTop='';cap.style.right='';figure.classList.toggle('capflow',flow);
+  if(two){const d=(y0+y1)/2+(el.getBoundingClientRect().top-figure.getBoundingClientRect().top)-text.offsetHeight/2;if(d>=0)text.style.marginTop=d+'px';else figure.style.marginTop=-d+'px';}
+  const w=el.clientWidth,h=y1+14,s=svg(el,w,h),SEA=['SG','MY','BN','PH','VN','TH','KH','TL','MM','LA'],REF=['US','IN'];
+  const xl=w-116,y=d3.scaleLinear([1,n],[y0,y1]),listed=d=>d.r===1||d.r===n||d.c==='ID'||SEA.includes(d.c)||REF.includes(d.c);
+  s.append('line').attr('x1',xl).attr('x2',xl).attr('y1',y0).attr('y2',y1).attr('stroke','#6b6b6b').attr('stroke-width',1.2);
+  P.forEach(d=>{s.append('line').attr('x1',xl).attr('x2',xl+4).attr('y1',y(d.r)).attr('y2',y(d.r)).attr('stroke',GRL).attr('stroke-width',1).append('title').text(`${d.n}: ${ord(d.r)}`);});
+  dodge(P.filter(listed).map(d=>({d,y:y(d.r)})),19).forEach(o=>{const d=o.d,isID=d.c==='ID',isS=SEA.includes(d.c),col=isID?RED:isS?BLUE:GR;
+    s.append('line').attr('x1',xl-13).attr('x2',xl-3).attr('y1',o.ly).attr('y2',o.y).attr('stroke',col).attr('stroke-width',1).attr('opacity',.8);
+    s.append('circle').attr('cx',xl).attr('cy',o.y).attr('r',isID?3.8:2.2).attr('fill',col);
+    const t=lab2(s,d.n,ord(d.r),xl-18,o.ly+(isID?5.5:4.5),{anchor:'end',fill:col,size:isID?16:14});
+    if(o.ly<cap.offsetHeight+24)tops.push(t.node().getBBox().x);});
+  if(!flow)cap.style.right=Math.round(Math.min(figure.clientWidth-cap.offsetWidth,figure.clientWidth-(d3.min(tops)??xl-18)+36))+'px';
+  // direction: two small arrows between the line and the text, each led by a label turned to read along it
+  const xa=xl+27,arr=(ya,yb)=>s.append('path').attr('d',`M${xa},${ya} V${yb} m-4.5,${yb<ya?7:-7} l4.5,${yb<ya?-7:7} l4.5,${yb<ya?7:-7}`).attr('fill','none').attr('stroke',GR).attr('stroke-width',1.2).attr('stroke-linecap','round').attr('stroke-linejoin','round');
+  arr(y0+44,y0+4);arr(y1-44,y1-4);
+  const lab=(t,x,yy,rot)=>s.append('text').attr('transform',`translate(${x},${yy}) rotate(${rot})`).attr('text-anchor','end').attr('font-family',SANS).attr('font-size',12.5).attr('fill','#afafaf').text(t);
+  lab('More chats per person',xa+4.5,y0+53,-90);lab('Fewer chats per person',xa-4.5,y1-53,90);
+});
+
+/* ---------- work share lines ---------- */
+function lineSeries(s,name,vals,color,sw,X,y,labels){
+  const g=s.append('g'),line=d3.line().x((d,i)=>X(i)).y(d=>y(d));
+  const p=g.append('path').attr('d',line(vals)).attr('fill','none').attr('stroke',color).attr('stroke-width',sw).attr('stroke-linejoin','round').attr('stroke-linecap','round');
+  g.selectAll('circle').data(vals).join('circle').attr('cx',(d,i)=>X(i)).attr('cy',d=>y(d)).attr('r',sw+0.7).attr('fill',color).append('title').text((d,i)=>`${name}, ${labels[i]}: ${d}%`);
+  return {g,p,name,vals,color};
+}
+function endLabels(objs,xr,y,sm,gap){
+  const E=dodge(objs.map(o=>({o,y:y(o.vals[o.vals.length-1])})),gap||17);
+  // a font wider than the one the margins were set for must not push a label off the screen: it shrinks to fit
+  const W=+objs[0].g.node().ownerSVGElement.getAttribute('width'),fs=sm?12.5:14.5;
+  E.forEach(e=>{const nm=sm&&e.o.name==='Southeast Asia'?'SE Asia':e.o.name,t=lab2(e.o.g,nm,f1(e.o.vals[e.o.vals.length-1])+'%',xr+9,e.ly+4.5,{fill:e.o.color,size:fs});
+    const b=t.node().getBBox();if(b.x+b.width>W-1)t.attr('font-size',Math.max(10,fs*(W-1-b.x)/b.width));});
+}
+reg('work',el=>{
+  // Two views in one pinned figure. States 0 to 2 are the lines: the world and every country, then the regional
+  // average, then Indonesia with its note. State 3 turns the same countries into dots, placed by how many points
+  // of work share each lost between its first six months in the data and its last six.
+  const [w,h]=box(el,0.92,0.72),s=svg(el,w,h),sm=w<520,m={l:40,r:sm?104:154,t:12,b:34},q=D.quarters.length,figure=el.closest('figure');
+  lowStep(el);
+  s.append('rect').attr('width',w).attr('height',h).attr('fill','transparent'); // so the whole chart area takes the pointer
+  // ----- the lines. The y-axis is cut between 0 and 10%: the origin is labeled 0 and a break mark shows the cut.
+  const A=s.append('g'),yb=h-m.b,x=d3.scaleLinear([0,q-1],[m.l+6,w-m.r]),y=d3.scaleLinear([10,70],[yb-34,m.t]),ax=A.append('g');
+  axisY(ax,y,[10,20,30,40,50,60,70],m.l,w-m.r,'%');axisLine(ax,m.l,m.t,yb,w-m.r,true);
+  D.quarters.forEach((t,i)=>{if((sm||w<640)&&i%2)return;txt(A,qlab(t),x(i),yb+19,{anchor:'middle',fill:GR,size:12.5});});
+  const line=d3.line().x((d,i)=>x(i)).y(d=>y(d));
+  const sp=A.append('g').attr('fill','none').attr('stroke',GRL).attr('stroke-width',1);
+  Object.values(D.work.countries_q).forEach(v=>sp.append('path').attr('d',line(v)));
+  const W=lineSeries(A,'World',D.work.world_q,GR,2.2,x,y,D.quarters),S=lineSeries(A,'Southeast Asia',D.work.sea_q,BLUE,2.2,x,y,D.quarters),I=lineSeries(A,'Indonesia',D.work.id_q,RED,2.8,x,y,D.quarters);
+  endLabels([W,S,I],x(q-1),y,sm);
+  const notes=A.append('g'),ns=sm?13:14.5;
+  txt(notes,'Indonesia stops\nfollowing here',x(2)+8,y(21),{note:true,fill:RED,size:ns});
+  arrow(notes,x(2)+3,y(21)-ns*0.9,x(2)+1,y(D.work.id_q[2])+11,RED,-0.3);
+  // ----- the dots
+  const C=s.append('g'),data=D.work.change,lo=Math.floor(d3.min(data,d=>d.d)/5)*5,cx=d3.scaleLinear([lo,2.5],[16,w-16]),top=sm?46:60,bot=h-30,mid=(top+bot)/2+8,r=sm?3.3:Math.min(7.2,w/100);
+  const pts=v=>(v<0?MIN:v>0?'+':'')+f1(Math.abs(v))+' pts';
+  d3.range(lo,1,10).concat(lo%10?[0]:[]).filter((v,i,a)=>a.indexOf(v)===i).forEach(v=>{
+    C.append('line').attr('x1',cx(v)).attr('x2',cx(v)).attr('y1',top).attr('y2',bot).attr('stroke',RULE);
+    txt(C,(v<0?MIN+Math.abs(v):v)+(v===0?' (no change)':sm&&v!==lo?'':' pts'),cx(v),h-12,{anchor:v===0?'end':'middle',fill:GR,size:12.5});});
+  const placed=[];
+  data.slice().sort((a,b)=>a.d-b.d).forEach(d=>{const px=cx(d.d);let k=0,off=0;
+    for(;;){const py=mid+off;if(!placed.some(p=>(p.x-px)**2+(p.y-py)**2<(2*r+1.2)**2)){placed.push({x:px,y:py,d});break;}k++;off=(k%2?1:-1)*Math.ceil(k/2)*(r*1.15);}});
+  [['World',D.work.world_change,GR],['Southeast Asia',D.work.sea_change,BLUE]].forEach(([nm,v,col],i)=>{
+    C.append('line').attr('x1',cx(v)).attr('x2',cx(v)).attr('y1',top-4).attr('y2',bot).attr('stroke',col).attr('stroke-width',2).attr('stroke-dasharray',i?null:'5 4');
+    lab2(C,sm&&i?'SE Asia':nm,pts(v),cx(v)+(i?7:-7),i?top+8:top-10,{fill:col,size:sm?13:14.5,anchor:i?'start':'end'});});
+  C.append('g').selectAll('circle').data(placed).join('circle').attr('cx',p=>p.x).attr('cy',p=>p.y).attr('r',p=>p.d.c==='ID'?r+3:r).attr('fill',p=>p.d.c==='ID'?RED:GRL).attr('stroke',PAPER).attr('stroke-width',.6).each(function(p){p.el=d3.select(this);});
+  const id=placed.find(p=>p.d.c==='ID'),ly=id.y+(sm?62:86);
+  lab2(C,'Indonesia',pts(id.d.d),id.x-(sm?8:12),ly,{fill:RED,size:sm?14.5:16,anchor:'end',halo:6});
+  arrow(C,id.x-(sm?34:44),ly-(sm?18:20),id.x-5,id.y+11,RED,-0.35);
+  // Hovering or tapping a dot lights it up and names the country. Indonesia already carries its label, so it only gets a ring.
+  const tip=C.append('g');
+  hover(s,placed,p=>{
+    placed.forEach(o=>{if(o.lit){o.lit=false;const me=o.d.c==='ID';o.el.attr('r',me?r+3:r).attr('fill',me?RED:GRL).attr('stroke',PAPER).attr('stroke-width',.6);}});
+    tip.selectAll('*').remove();if(!p)return;
+    p.lit=true;if(p.d.c==='ID'){p.el.attr('stroke','#fff').attr('stroke-width',2.5);return;}
+    p.el.raise().attr('fill','#fff').attr('r',r+2.5);
+    fit(lab2(tip,p.d.n,pts(p.d.d),p.x,p.y-r-10,{anchor:'middle',size:13.5,fill:'#fff',halo:6}),w);
+  },()=>FIG.work.state>=3);
+  return {set(st,anim){const T=anim&&!reduce?600:0,v=st>=3?1:0;
+      figure.dataset.view=v;
+      A.transition().duration(T).attr('opacity',v?0:1);C.transition().duration(T).attr('opacity',v?1:0);A.style('pointer-events',v?'none':null);
+      sp.transition().duration(T).attr('opacity',st>=2?0.4:1);
+      S.g.transition().duration(T).attr('opacity',st>=1?1:0);I.g.transition().duration(T).attr('opacity',st>=2?1:0);
+      // the note belongs to the Indonesia line and arrives with it, once the line has mostly drawn
+      notes.transition().delay(st===2&&T?900:0).duration(T).attr('opacity',st>=2?1:0);
+      I.p.attr('stroke-dasharray',null).attr('stroke-dashoffset',null);
+      if(st===2&&anim&&!reduce){const L=I.p.node().getTotalLength();I.p.attr('stroke-dasharray',L).attr('stroke-dashoffset',L).transition().duration(1500).attr('stroke-dashoffset',0);}}};
+});
+
+/* ---------- topics, small multiples ---------- */
+reg('topics',el=>{
+  const w=el.clientWidth,cols=w>980?4:w>640?3:2,order=['Writing','Seeking information','Practical Guidance','Multimedia','Self-expression','Technical help','Other/Unknown'];
+  const m={l:28,r:cols===2?46:84,t:44,b:cols===2?60:84},cw=w/cols,ch=cols===2?238:292,rows=Math.ceil(8/cols),h=rows*ch-(m.b-30),s=svg(el,w,h),q=D.quarters.length;
+  order.forEach((t,i)=>{
+    const g=s.append('g').attr('transform',`translate(${(i%cols)*cw},${Math.floor(i/cols)*ch})`),S=D.topics.series[t];
+    const x=d3.scaleLinear([0,q-1],[m.l,cw-m.r]),y=d3.scaleLinear([0,40],[ch-m.b,m.t]),line=d3.line().x((d,i)=>x(i)).y(d=>y(d));
+    [0,10,20,30,40].forEach(v=>{g.append('line').attr('x1',m.l).attr('x2',cw-m.r).attr('y1',y(v)).attr('y2',y(v)).attr('stroke',RULE);txt(g,v,m.l-5,y(v)+4,{anchor:'end',fill:GR,size:11.5});});
+    axisLine(g,m.l,m.t,ch-m.b,cw-m.r);
+    txt(g,TOPIC_NAME[t],m.l,22,{weight:700,size:cols===2?14.5:16});
+    const L=[['world',GR,2,'World'],['sea',BLUE,2,'Southeast Asia'],['id',RED,2.8,'Indonesia']];
+    L.forEach(([k,c,sw,nm])=>{g.append('path').attr('d',line(S[k])).attr('fill','none').attr('stroke',c).attr('stroke-width',sw).attr('stroke-linejoin','round').attr('stroke-linecap','round').append('title').text(`${nm}: ${f1(S[k][0])}% to ${f1(S[k][q-1])}%`);});
+    dodge(L.map(([k,c])=>({c,y:y(S[k][q-1]),v:S[k][q-1]})),13).forEach(e=>txt(g,f1(e.v),cw-m.r+6,e.ly+4,{fill:e.c,size:12.5,weight:700}));
+    txt(g,'2024',m.l,ch-m.b+19,{fill:GR,size:11.5});txt(g,'2026',cw-m.r,ch-m.b+19,{fill:GR,size:11.5,anchor:'end'});
+    const ns=cols===2?12:13;
+    if(t==='Writing'){txt(g,'Indonesia\nbarely moves',x(0.8),y(12),{note:true,fill:RED,size:ns});if(cols===2)arrow(g,x(2.4),y(12)-ns-2,x(2.9),y(S.id[3])+9,RED,-0.25);else arrow(g,x(4.9),y(10),x(5.5),y(S.id[5])+10,RED,-0.3);}
+    if(t==='Seeking information'){txt(g,'The world looks\nthings up more',x(0.4),y(35),{note:true,fill:GR,size:ns});if(cols===2)arrow(g,x(6.3),y(35)+ns*1.25+7,x(6.8),y(S.world[7])-8,GR,-0.2);else arrow(g,x(5.2),y(31),x(6.6),y(S.world[7])-8,GR,-0.3);}
+  });
+  const i=7,g=s.append('g').attr('transform',`translate(${(i%cols)*cw+m.l},${Math.floor(i/cols)*ch+64})`),ks=cols===2?13:14;
+  [['Indonesia',RED,2.8],[cols===2?'Southeast Asia,\naverage':'Southeast Asia,\naverage of neighbors',BLUE,2],['World',GR,2]].forEach(([nm,c,sw],k)=>{const yy=k===0?0:k===1?30:78;
+    g.append('line').attr('x1',0).attr('x2',26).attr('y1',yy).attr('y2',yy).attr('stroke',c).attr('stroke-width',sw).attr('stroke-linecap','round');txt(g,nm,36,yy+4.5,{fill:c,size:ks,weight:600});});
+});
+
+/* ---------- asking, doing, expressing ---------- */
+reg('ade',el=>{
+  const w=el.clientWidth,sm=w<520,h=Math.round(Math.min(w*0.94,innerHeight*0.78,600)),s=svg(el,w,h),m={l:44,r:26,t:40,b:50},C=D.ade.countries;
+  // Both axes are cut between 0 and their first value. The origin is labeled 0 and a break mark shows each cut.
+  const ox=m.l,oy=h-m.b,x=d3.scaleLinear([32,58],[ox+36,w-m.r]),y=d3.scaleLinear([12,32],[oy-34,m.t]);
+  [35,40,45,50,55].forEach(v=>{s.append('line').attr('x1',x(v)).attr('x2',x(v)).attr('y1',m.t).attr('y2',oy).attr('stroke',RULE);txt(s,v+'%',x(v),oy+18,{anchor:'middle',fill:GR,size:12.5});});
+  [15,20,25,30].forEach(v=>{s.append('line').attr('x1',ox).attr('x2',w-m.r).attr('y1',y(v)).attr('y2',y(v)).attr('stroke',RULE);txt(s,v+'%',ox-6,y(v)+4,{anchor:'end',fill:GR,size:12.5});});
+  txt(s,'0',ox-6,oy+16,{anchor:'end',fill:GR,size:12.5});
+  const ax=s.append('g').attr('fill','none').attr('stroke',GR).attr('stroke-width',1.2).attr('stroke-linecap','round').attr('stroke-linejoin','round'),xe=w-m.r+14,ye=m.t-18;
+  ax.append('path').attr('d',`M${ox},${ye} V${oy-22} M${ox},${oy-12} V${oy} H${ox+12} M${ox+22},${oy} H${xe}`);
+  brk(ax,ox,oy-17,'y');brk(ax,ox+17,oy,'x');
+  ax.append('path').attr('d',`M${ox-4.5},${ye+7} l4.5,-7 l4.5,7`);ax.append('path').attr('d',`M${xe-7},${oy-4.5} l7,4.5 l-7,4.5`);
+  txt(s,'Doing: handing over a task',xe,h-8,{anchor:'end',size:14,weight:700});
+  txt(s,sm?'Expressing: a thought or feeling':'Expressing: sharing a thought or feeling',ox+11,ye+9,{size:14,weight:700});
+  s.insert('rect',':first-child').attr('width',w).attr('height',h).attr('fill','transparent'); // so the whole chart area takes the pointer
+  const r0=sm?3.6:4.6,pts=[];
+  s.append('g').selectAll('circle').data(C.filter(d=>d.c!=='ID')).join('circle').attr('cx',d=>x(d.d)).attr('cy',d=>y(d.e)).attr('r',r0).attr('fill',GRL).attr('stroke',PAPER).attr('stroke-width',.6)
+    .each(function(d){pts.push({x:x(d.d),y:y(d.e),n:d.n,c:d.c,d:d.d,e:d.e,r:r0,fill:GRL,el:d3.select(this)});});
+  const jp=pts.find(p=>p.c==='JP');if(jp)jp.lab=txt(s,'Japan',jp.x+8,jp.y+4,{fill:GR,size:13.5,weight:500,halo:true});
+  const big=(o,n,col,r)=>{const p={x:x(o.d),y:y(o.e),n,d:o.d,e:o.e,r,fill:col,big:true,el:s.append('circle').attr('cx',x(o.d)).attr('cy',y(o.e)).attr('r',r).attr('fill',col).attr('stroke',PAPER).attr('stroke-width',1.5)};pts.push(p);return p;};
+  const pW=big(D.ade.world,'World',GR,7.5);pW.lab=txt(s,'World',pW.x-11,pW.y-9,{fill:GR,weight:700,size:14.5,anchor:'end',halo:true});
+  const pS=big(D.ade.sea,'Southeast Asia',BLUE,7.5);pS.lab=txt(s,sm?'SE Asia':'Southeast Asia',pS.x+6,pS.y-13,{fill:BLUE,weight:700,size:14.5,halo:true});
+  const pI=big(C.find(d=>d.c==='ID'),'Indonesia',RED,9);pI.lab=s.append('g');
+  txt(pI.lab,'Indonesia',pI.x-(sm?32:46),pI.y+(sm?34:44),{note:true,fill:RED,size:sm?14.5:16,weight:700,anchor:'end'});
+  arrow(pI.lab,pI.x-(sm?28:42),pI.y+(sm?28:38),pI.x-9,pI.y+(sm?9:11),RED,0.3);
+  // Hovering or tapping any dot lights it up and gives the country with both values. A dot that already carries
+  // a name (Japan, the world, the region, Indonesia) hides that name while the fuller label shows, so the two never overlap.
+  const tip=s.append('g');
+  hover(s,pts,p=>{
+    pts.forEach(o=>{if(o.lit){o.lit=false;o.el.attr('r',o.r).attr('fill',o.fill).attr('stroke',PAPER).attr('stroke-width',o.big?1.5:.6);if(o.lab)o.lab.attr('opacity',1);}});
+    tip.selectAll('*').remove();if(!p)return;
+    p.lit=true;if(p.big)p.el.attr('stroke','#fff').attr('stroke-width',2.5);else p.el.raise().attr('fill','#fff').attr('r',p.r+2.5);
+    if(p.lab)p.lab.attr('opacity',0);
+    const left=p.x>w*0.55,val=`doing ${f1(p.d)}%, expressing ${f1(p.e)}%`;
+    const tc=p.big?p.fill:'#fff'; // the world, the region, and Indonesia keep their own color
+    fit(sm?lab2(tip,p.n,val,p.x,p.y-p.r-9,{anchor:'middle',size:12.5,fill:tc,halo:6}):lab2(tip,p.n,val,p.x+(left?-(p.r+8):p.r+8),p.y+4.5,{anchor:left?'end':'start',size:13.5,fill:tc,halo:6}),w);
+  });
+});
+
+/* ---------- work activities ---------- */
+reg('iwa',el=>{
+  // One strip per activity, ruled like a table and sorted from Indonesia's highest multiple to its lowest.
+  // Position is a country's share of work messages in that activity as a multiple of the median country's
+  // share, on a log scale: the dashed middle line is the median, right is more, left is less.
+  // Every country is a small mark: gray for the others, blue for the Southeast Asia average, red for Indonesia,
+  // which also carries its multiple as a label. Moving the pointer along a strip lights up the nearest country,
+  // names it, and lights the same country in the other strips.
+  const w=el.clientWidth,sm=w<780,NAME=Object.fromEntries(D.percap.map(d=>[d.c,d.n])),times=v=>`${f1(v)}x`;
+  const acts=D.iwa.acts.filter(a=>!['4.A.2.b.2.I15','4.A.4.b.3.I02'].includes(a.code)).sort((a,b)=>b.id/b.med-a.id/a.med);
+  const s=svg(el,w,10),labW=sm?0:318,x=d3.scaleLog([0.18,6.4],[labW+14,w-(sm?48:70)]).clamp(true);
+  // the note about the first row sits above the chart, at the right, so it is measured first
+  const first=acts[0],nOpt={note:true,fill:RED,size:sm?13:13.5},noteTxt=first.code==='4.A.2.b.2.I23'?wrap(s,`Indonesia uses ChatGPT to develop research plans ${f1(first.id/first.med)} times as much as the median country`,sm?w-10:360,nOpt):'';
+  const nl=noteTxt?noteTxt.split('\n').length:0,nt=nl?(sm?20:10):0,tickY=nt+nl*17+(nl?26:16),rh=sm?58:42,up=sm?40:rh/2,down=rh-up; // nt: room between the caption and the note
+  let yy=tickY+14;const ys=acts.map(()=>{const v=yy+up;yy+=rh;return v;});
+  // a second note, under the table, puts a multiple below 1 as "less": 0.6x is 0.4 times less than the median country
+  const low=acts.find(a=>a.code==='4.A.1.a.1.I07'),note2=low?wrap(s,`Indonesia uses ChatGPT to look up goods or services ${f1(1-low.id/low.med)} times less than the median country`,sm?w-124:360,nOpt):'',nl2=note2?note2.split('\n').length:0;
+  const h=yy+2+(nl2?nl2*17+24:0);s.attr('height',h).attr('viewBox',`0 0 ${w} ${h}`);
+  [[0.25,'0.25x'],[0.5,'0.5x'],[1,sm?'median':'median country'],[2,'2x'],[4,'4x']].forEach(([v,l])=>{
+    s.append('line').attr('x1',x(v)).attr('x2',x(v)).attr('y1',ys[0]-up).attr('y2',ys[acts.length-1]+down).attr('stroke',v===1?GR:RULE).attr('stroke-dasharray',v===1?'4 4':null);
+    txt(s,l,x(v),tickY,{anchor:'middle',fill:v===1?INK:GR,size:12.5,weight:v===1?700:400});});
+  const byC=new Map(),tip=s.append('g');let lit=null;
+  const show=(d,y0)=>{
+    if(lit&&(!d||d.c!==lit))(byC.get(lit)||[]).forEach(e=>e.attr('stroke',GRL).attr('stroke-width',1.5));
+    tip.selectAll('*').remove();lit=d?d.c:null;if(!d)return;
+    (byC.get(d.c)||[]).forEach(e=>e.attr('stroke','#fff').attr('stroke-width',2.5));
+    lab2(tip,d.n,times(d.v),d.x,y0-15,{anchor:d.x>w-120?'end':d.x<labW+100?'start':'middle',size:13.5,fill:'#fff',halo:6});};
+  let firstLabel=null,lowLabel=null;
+  acts.forEach((a,i)=>{const y0=ys[i],g=s.append('g');
+    [y0-up,y0+down].forEach(yl=>g.append('line').attr('x1',0).attr('x2',w).attr('y1',yl).attr('y2',yl).attr('stroke',RULE));   // ruled like a table row
+    if(sm){const t=txt(g,a.label,2,y0-20,{size:14,weight:600}),tw=t.node().getComputedTextLength();if(tw>w-4)t.attr('font-size',14*(w-4)/tw);}else txt(g,a.label,labW-8,y0+5,{size:15,weight:600,anchor:'end'});
+    const items=a.vals.filter(d=>d[1]/a.med>=0.18).map(d=>({c:d[0],n:NAME[d[0]]||d[0],v:d[1]/a.med}));
+    items.forEach(d=>{d.x=x(d.v);const e=g.append('line').attr('x1',d.x).attr('x2',d.x).attr('y1',y0-8).attr('y2',y0+8).attr('stroke',GRL).attr('stroke-width',1.5);if(!byC.has(d.c))byC.set(d.c,[]);byC.get(d.c).push(e);});
+    const sea={c:'_sea',n:'Southeast Asia average',v:a.sea/a.med,x:x(a.sea/a.med)},idn={c:'_id',n:'Indonesia',v:a.id/a.med,x:x(a.id/a.med)};
+    g.append('line').attr('x1',sea.x).attr('x2',sea.x).attr('y1',y0-10).attr('y2',y0+10).attr('stroke',BLUE).attr('stroke-width',2.6).attr('stroke-linecap','round');
+    g.append('line').attr('x1',idn.x).attr('x2',idn.x).attr('y1',y0-12).attr('y2',y0+12).attr('stroke',RED).attr('stroke-width',3).attr('stroke-linecap','round');
+    const lf=a.sea>a.id,lb=txt(g,times(idn.v),idn.x+(lf?-9:9),y0+5,{fill:RED,weight:700,size:14.5,anchor:lf?'end':'start',halo:5});
+    if(i===0)firstLabel={x:idn.x+9+lb.node().getComputedTextLength()/2,y:y0-9};
+    if(a===low)lowLabel={x:idn.x+(lf?-1:1)*(9+lb.node().getComputedTextLength()/2),y:y0+11};
+    // one hit area per strip finds the nearest mark, so the thin marks are easy to pick
+    const all=items.concat([sea,idn]),r=x.range();
+    g.append('rect').attr('x',r[0]-8).attr('y',y0-17).attr('width',r[1]-r[0]+16).attr('height',34).attr('fill','transparent')
+      .on('pointermove',ev=>{const mx=d3.pointer(ev,s.node())[0];let best=null;all.forEach(d=>{const dd=Math.abs(d.x-mx);if(dd<12&&(!best||dd<Math.abs(best.x-mx)))best=d;});show(best,y0);})
+      .on('pointerleave',()=>show(null));
+  });
+  if(noteTxt&&firstLabel){txt(s,noteTxt,w-2,14+nt,{...nOpt,anchor:'end',lh:17/nOpt.size});arrow(s,Math.min(w-14,firstLabel.x+10),nt+nl*17+4,firstLabel.x,firstLabel.y,RED,-0.18);}
+  if(note2&&lowLabel){const t=txt(s,note2,lowLabel.x+18,yy+26,{...nOpt,lh:17/nOpt.size}),b=t.node().getBBox(),over=b.x+b.width-(w-2);
+    if(over>0)t.attr('x',lowLabel.x+18-over).selectAll('tspan').attr('x',lowLabel.x+18-over); // keep it inside the chart
+    arrow(s,lowLabel.x+10,yy+14,lowLabel.x,lowLabel.y,RED,0.18);}
+  s.selectAll('line,text,path').style('pointer-events','none');tip.raise().style('pointer-events','none');
+});
+
+/* ---------- age ---------- */
+reg('age',el=>{
+  const [w,h]=box(el,0.92,0.72),s=svg(el,w,h),sm=w<520,m={l:40,r:sm?104:154,t:12,b:34},q=D.quarters.length,M=D.months.length,U=D.age.u25,figure=el.closest('figure');
+  lowStep(el);
+  // Two y-scales share the same space: all three lines (20 to 75%), and a close-up on Indonesia for the
+  // September view (36 to 70%). Both are cut above zero, so the origin is labeled 0 and a break mark shows the cut.
+  const yb=h-m.b,x=d3.scaleLinear([0,M-1],[m.l+6,w-m.r]),xq=i=>x(i*3+1),yA=d3.scaleLinear([20,75],[yb-34,m.t]),yZ=d3.scaleLinear([36,70],[yb-34,m.t]);
+  const A=s.append('g');axisLine(A,m.l,m.t,yb,w-m.r,true);
+  const axA=A.append('g'),axZ=A.append('g');axisY(axA,yA,[20,30,40,50,60,70],m.l,w-m.r,'%');axisY(axZ,yZ,[40,50,60,70],m.l,w-m.r,'%');
+  D.quarters.forEach((t,i)=>{if((sm||w<640)&&i%2)return;txt(A,qlab(t),xq(i),yb+19,{anchor:'middle',fill:GR,size:12.5});});
+  // the close-up: Indonesia month by month, with each September marked
+  const A2=s.append('g');
+  A2.append('path').attr('d',d3.line().x((d,i)=>x(i)).y(d=>yZ(d))(U.id_m)).attr('fill','none').attr('stroke',RED).attr('stroke-width',1.2).attr('opacity',.6);
+  // each year's August-to-September segment is drawn heavy: that is the jump
+  D.months.forEach((mo,i)=>{if(!mo.endsWith('-09'))return;A2.append('path').attr('d',d3.line().x(k=>x(k)).y(k=>yZ(U.id_m[k]))(d3.range(i-1,i+1))).attr('fill','none').attr('stroke',RED).attr('stroke-width',3.2).attr('stroke-linejoin','round').attr('stroke-linecap','round');});
+  A2.selectAll('circle').data(U.id_m).join('circle').attr('cx',(d,i)=>x(i)).attr('cy',d=>yZ(d)).attr('r',2.8).attr('fill',RED).append('title').text((d,i)=>`Indonesia, ${D.months[i]}: ${d}%`);
+  D.months.forEach((mo,i)=>{if(!mo.endsWith('-09'))return;ring(A2,x(i),yZ(U.id_m[i]),8,RED);txt(A2,'Sept.',x(i),yZ(U.id_m[i])-14,{note:true,fill:RED,size:sm?12.5:13.5,anchor:'middle'});});
+  const W=lineSeries(A,'World',U.world_q,GR,2.2,xq,yA,D.quarters),S=lineSeries(A,'Southeast Asia',U.sea_q,BLUE,2.2,xq,yA,D.quarters),I=lineSeries(A,'Indonesia',U.id_q,RED,2.8,xq,yA,D.quarters);
+  endLabels([W,S,I],xq(q-1),yA,sm);
+  const lineQ=yy=>d3.line().x((d,i)=>xq(i)).y(d=>yy(d))(U.id_q),il=I.g.select('text'),ilA=+il.attr('y');
+  // Every age group, as a table of bars: one row per country, one column per age group, and the length of a bar
+  // is that group's share of the country's messages. Bars in a column start from the same line, so one age group
+  // can be compared down its column, and a row read across is a country's age profile. Indonesia, the region,
+  // and the world sit among eight large countries, ordered by the share from ages 18 to 24.
+  // A phone shows four groups: everyone aged 45 and over is one column (o), which the data file carries as its own sum.
+  const B=s.append('g'),G=sm?D.age.groups.slice(0,3).concat(['45+']):D.age.groups,SHORT={'Southeast Asia':'SE Asia','United States':'US','South Korea':'S. Korea'};
+  let rows=[{n:'Indonesia',m:D.age.mix.id,o:D.age.mix45.id,col:RED},{n:'Southeast Asia',m:D.age.mix.sea,o:D.age.mix45.sea,col:BLUE},{n:'World',m:D.age.mix.world,o:D.age.mix45.world,col:GR}].concat(D.age.pick.map(d=>({n:d.n,m:d.m,o:d.o,c:d.c})));
+  rows.forEach(d=>{d.v=sm?d.m.slice(0,3).concat([d.o]):d.m;});
+  if(sm)rows=rows.filter(d=>!['NG','DE'].includes(d.c)); // two fewer rows on a phone
+  rows.sort((a,b)=>b.m[0]-a.m[0]);
+  const nR=rows.length,labL=sm?62:126,cw=(w-labL)/G.length,topB=sm?20:34,rhB=(h-topB-2)/nR,bh=Math.min(sm?13:20,rhB*0.45),vw=sm?32:38;
+  const bl=d3.scaleLinear([0,d3.max(rows,d=>d3.max(d.v))],[0,cw-vw-(sm?6:12)]);
+  G.forEach((g,k)=>{const x0=labL+k*cw;
+    txt(B,g.replace('-','–'),x0,topB-(sm?8:13),{size:sm?11:13,weight:600});
+    B.append('line').attr('x1',x0).attr('x2',x0).attr('y1',topB).attr('y2',topB+nR*rhB).attr('stroke','#6b6b6b');});
+  txt(B,'Age',labL-(sm?8:14),topB-(sm?8:13),{anchor:'end',fill:GR,size:sm?11:13});
+  rows.forEach((d,i)=>{const yc=topB+i*rhB+rhB/2,g=B.append('g'),me=d.n==='Indonesia';
+    g.append('line').attr('x1',0).attr('x2',w).attr('y1',yc-rhB/2).attr('y2',yc-rhB/2).attr('stroke',RULE);
+    txt(g,sm&&SHORT[d.n]||d.n,labL-(sm?8:14),yc+4.5,{anchor:'end',fill:d.col||'#cfcfcf',weight:d.col?700:600,size:sm?11.5:me?14.5:13.5});
+    d.v.forEach((v,k)=>{const x0=labL+k*cw;
+      g.append('rect').attr('x',x0).attr('y',yc-bh/2).attr('width',Math.max(1,bl(v))).attr('height',bh).attr('fill',d.col||GRL).append('title').text(`${d.n}, ages ${G[k].replace('-','–')}: ${f1(v)}%`);
+      txt(g,f1(v)+'%',x0+bl(v)+(sm?4:5),yc+(sm?3.8:4.4),{fill:d.col||GR,size:sm?10.5:12.5,weight:me?700:400});});});
+  return {set(st,anim){const T=anim&&!reduce?600:0,z=st===1,yy=z?yZ:yA;
+      figure.dataset.view=st===2?1:0;
+      A.transition().duration(T).attr('opacity',st<2?1:0);A2.transition().duration(T).attr('opacity',z?1:0);B.transition().duration(T).attr('opacity',st===2?1:0);
+      axA.transition().duration(T).attr('opacity',z?0:1);axZ.transition().duration(T).attr('opacity',z?1:0);
+      W.g.transition().duration(T).attr('opacity',z?0:1);S.g.transition().duration(T).attr('opacity',z?0:1);
+      I.p.attr('stroke-dasharray',z?'5 5':null).transition().duration(T).attr('d',lineQ(yy)).attr('stroke-width',z?1.3:2.8).attr('opacity',z?.75:1);I.g.selectAll('circle').transition().duration(T).attr('cy',d=>yy(d)).attr('r',z?0:3.5);il.transition().duration(T).attr('y',z?yZ(U.id_q[q-1])+4.5:ilA);
+      A.style('pointer-events',st<2?null:'none');A2.style('pointer-events',z?null:'none');B.style('pointer-events',st===2?null:'none');}};
+});
+
+/* ---------- gender ---------- */
+reg('gender',el=>{
+  const [w,h]=box(el,0.92,0.72),s=svg(el,w,h),sm=w<520,m={l:40,r:sm?104:154,t:12,b:34},q=D.quarters.length,GD=D.gender;
+  lowStep(el);
+  // The y-axis is cut between 0 and 40%: the origin is labeled 0 and a break mark shows the cut.
+  const yb=h-m.b,x=d3.scaleLinear([0,q-1],[m.l+6,w-m.r]),y=d3.scaleLinear([40,66],[yb-34,m.t]);
+  const A=s.append('g');axisY(A,y,[40,45,55,60,65],m.l,w-m.r,'%');axisLine(A,m.l,m.t,yb,w-m.r,true);
+  A.append('line').attr('x1',m.l).attr('x2',w-m.r).attr('y1',y(50)).attr('y2',y(50)).attr('stroke',INK).attr('stroke-dasharray','5 4');txt(A,'50%',m.l-6,y(50)+4,{anchor:'end',size:12.5,weight:700});
+  txt(A,'half of all messages',m.l+6,y(50)-7,{size:13,weight:600});
+  D.quarters.forEach((t,i)=>{if((sm||w<640)&&i%2)return;txt(A,qlab(t),x(i),h-m.b+19,{anchor:'middle',fill:GR,size:12.5});});
+  const W=lineSeries(A,'World',GD.world_q,GR,2.2,x,y,D.quarters),S=lineSeries(A,'Southeast Asia',GD.sea_q,BLUE,2.2,x,y,D.quarters),I=lineSeries(A,'Indonesia',GD.id_q,RED,2.8,x,y,D.quarters);
+  endLabels([W,S,I],x(q-1),y,sm);
+  txt(A,'A majority from\nthe first month',x(1.3),y(63.6),{note:true,fill:RED,size:sm?13:14.5});arrow(A,x(1.2),y(63),x(0)+5,y(GD.id_q[0])-10,RED,0.3);
+  const B=s.append('g'),T=D.topics.names.map((t,i)=>({t,id:GD.topic.id[i],w:GD.topic.world[i]})).sort((a,b)=>b.id-a.id);
+  const labW=sm?0:150,bx=d3.scaleLinear([30,70],[labW+26,w-30]),top=sm?54:40,rh=(h-top-30)/T.length;
+  [30,40,50,60,70].forEach(v=>{B.append('line').attr('x1',bx(v)).attr('x2',bx(v)).attr('y1',top-12).attr('y2',h-26).attr('stroke',v===50?INK:RULE).attr('stroke-dasharray',v===50?'5 4':null);txt(B,v+'%',bx(v),h-8,{anchor:'middle',fill:v===50?INK:GR,size:12.5,weight:v===50?700:400});});
+  T.forEach((d,i)=>{const y0=top+i*rh+rh/2+(sm?8:0);
+    if(sm)txt(B,TOPIC_NAME[d.t],bx(30)-22,y0-13,{size:13.5,weight:600});else txt(B,TOPIC_NAME[d.t],labW+10,y0+5,{size:15,weight:600,anchor:'end'});
+    B.append('line').attr('x1',bx(d.w)).attr('x2',bx(d.id)).attr('y1',y0).attr('y2',y0).attr('stroke',GRL).attr('stroke-width',2);
+    B.append('circle').attr('cx',bx(d.w)).attr('cy',y0).attr('r',4).attr('fill',GR).append('title').text(`World, ${TOPIC_NAME[d.t]}: ${d.w}%`);
+    B.append('circle').attr('cx',bx(d.id)).attr('cy',y0).attr('r',5).attr('fill',RED).append('title').text(`Indonesia, ${TOPIC_NAME[d.t]}: ${d.id}%`);
+    const left=d.w<d.id;txt(B,f1(d.w)+'%',bx(d.w)+(left?-9:9),y0+5,{fill:GR,size:13,weight:700,anchor:left?'end':'start',halo:true});txt(B,f1(d.id)+'%',bx(d.id)+(left?10:-10),y0+5,{fill:RED,size:13.5,weight:700,anchor:left?'start':'end'});});
+  if(sm){B.append('circle').attr('cx',7).attr('cy',14).attr('r',5).attr('fill',RED);txt(B,'Indonesia',19,19,{fill:RED,weight:700,size:14.5});B.append('circle').attr('cx',116).attr('cy',14).attr('r',4).attr('fill',GR);txt(B,'World',127,19,{fill:GR,weight:700,size:14.5});}
+  else{txt(B,'Indonesia',bx(T[0].id),top-20,{fill:RED,weight:700,size:14.5,anchor:'middle'});txt(B,'World',bx(T[0].w),top-20,{fill:GR,weight:700,size:14.5,anchor:'middle'});}
+  return {set(st,anim){const T2=anim&&!reduce?500:0;el.closest('figure').dataset.view=st===1?1:0;A.transition().duration(T2).attr('opacity',st===0?1:0);B.transition().duration(T2).attr('opacity',st===1?1:0);A.style('pointer-events',st===0?null:'none');B.style('pointer-events',st===1?null:'none');}};
+});
+
+/* ---------- pictures ---------- */
+reg('pics',el=>{
+  // Three panels on one scale, side by side: Indonesia, the Southeast Asia average, and the median country, which
+  // stands in for the world because work activities have no world series. Each panel holds the same two lines:
+  // visual design in the panel's own color, programming in light ink. Both are labeled at their last point.
+  // A dashed line marks where design passes programming, and a label under the axis names the two quarters it falls between.
+  const w=el.clientWidth,cols=w>760?3:1,gap=cols===3?Math.min(52,w*0.04):30,cw=(w-gap*(cols-1))/cols,ch=cols===3?Math.round(Math.min(400,Math.max(310,cw*0.9+20))):282;
+  const m={l:36,r:10,t:44,b:50},h=cols===3?ch:ch*3+gap*2,s=svg(el,w,h),P=D.pics,q=P.quarters.length,fs=cols===3&&cw<340?12.5:13.5;
+  [['Indonesia','id',RED],['Southeast Asia','sea',BLUE],['Median country','med',GR]].forEach(([nm,k,col],i)=>{
+    const g=s.append('g').attr('transform',cols===3?`translate(${i*(cw+gap)},0)`:`translate(0,${i*(ch+gap)})`);
+    const x=d3.scaleLinear([0,q-1],[m.l+10,cw-m.r-6]),y=d3.scaleLinear([0,12],[ch-m.b,m.t]),de=P.design[k],pr=P.prog[k];
+    axisY(g,y,[0,4,8,12],m.l,cw-m.r,'%');axisLine(g,m.l,m.t,ch-m.b,cw-m.r);
+    txt(g,nm,m.l,20,{weight:700,size:16,fill:col});
+    P.quarters.forEach((t,j)=>{if(j%2===0)txt(g,qlab(t),x(j),ch-m.b+19,{anchor:'middle',fill:GR,size:12});});
+    // where visual design passes programming: the straight lines between two quarters cross here
+    let c=1;while(c<q-1&&de[c]<pr[c])c++;const f=(pr[c-1]-de[c-1])/((de[c]-de[c-1])-(pr[c]-pr[c-1])),xc=x(c-1+f),yc=y(de[c-1]+f*(de[c]-de[c-1]));
+    g.append('line').attr('x1',xc).attr('x2',xc).attr('y1',m.t).attr('y2',ch-m.b+25).attr('stroke','#afafaf').attr('stroke-dasharray','4 4');
+    fit(txt(g,`between ${qlab(P.quarters[c-1])} and ${qlab(P.quarters[c])}`,xc,ch-m.b+39,{anchor:'middle',size:12.5,weight:600}),cw);
+    lineSeries(g,`Programming, ${nm}`,pr,INK,2,x,y,P.quarters);lineSeries(g,`Visual design, ${nm}`,de,col,2.8,x,y,P.quarters);
+    lab2(g,'Visual design',f1(de[q-1])+'%',x(q-1)+5,y(de[q-1])-13,{anchor:'end',fill:col,size:fs,halo:5});
+    lab2(g,'Programming',f1(pr[q-1])+'%',x(q-1)+5,y(pr[q-1])+22,{anchor:'end',fill:INK,size:fs,halo:5});
+    if(i===0){txt(g,'Creating pictures\nnow passes coding',x(0.45),y(10.3),{note:true,fill:RED,size:14.5});arrow(g,x(1.7),y(10.3)+26,xc-4,yc-9,RED,-0.25);} // the one note, in Indonesia's panel
+  });
+});
+
+/* ---------- boot ---------- */
+function drawAll(){Object.keys(FIG).forEach(draw);}
+/* ---------- title screen: someone keeps editing the subtitle ---------- */
+const SUBTITLES=[
+  'A data story of how Indonesians work more (and chat less) with ChatGPT',
+  'A data story of how Indonesians work more with ChatGPT',
+  'A data story of how Indonesians write more (and search less) with ChatGPT',
+  'A visualization of what Indonesians use ChatGPT for',
+  'A scrollytelling piece on how Indonesia compares with other countries',
+  'A data analysis of what kinds of work Indonesians bring to ChatGPT',
+  'A close reading of 27 months of ChatGPT usage data from Indonesia'];
+function typer(){
+  // Turns one subtitle into another the way a person edits a sentence: the cursor walks or jumps to a spot,
+  // a word or two gets selected and deleted (or backspaced), something new is typed in its place, now and then
+  // with a typo that is fixed at once. A word-level diff decides which parts change, so shared words stay put.
+  const tx=document.querySelector('.dek .tx');if(!tx)return;
+  const dek=tx.closest('.dek'),wait=ms=>new Promise(r=>setTimeout(r,ms)),rnd=(a,b)=>a+Math.random()*(b-a);
+  let s=SUBTITLES[0],pos=s.length,busy=false,seen=true,lw=innerWidth,typos=0;
+  // hold the height of the tallest subtitle, so the pill and the title above it never jump
+  const reserve=()=>{dek.style.minHeight='';let m=0;SUBTITLES.forEach(t=>{tx.textContent=t;m=Math.max(m,dek.offsetHeight);});tx.textContent=s;dek.style.minHeight=m+'px';};
+  reserve();
+  if(reduce)return;
+  const caret=document.createElement('span');caret.className='caret';
+  const draw=sel=>{tx.replaceChildren();
+    if(sel){const e=document.createElement('span');e.className='sel';e.textContent=s.slice(sel[0],sel[1]);tx.append(s.slice(0,sel[0]),e,s.slice(sel[1]));}
+    else tx.append(s.slice(0,pos),caret,s.slice(pos));};
+  draw();
+  new IntersectionObserver(es=>{seen=es[0].isIntersecting;}).observe(dek);
+  addEventListener('resize',()=>{if(innerWidth!==lw&&!busy){lw=innerWidth;reserve();draw();}});
+  // word-level diff: the stretches of words that differ, as {i0,i1,ins}, and how many words are shared
+  const diff=(a,b)=>{const n=a.length,m=b.length,T=Array.from({length:n+1},()=>new Array(m+1).fill(0));
+    for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)T[i][j]=a[i]===b[j]?T[i+1][j+1]+1:Math.max(T[i+1][j],T[i][j+1]);
+    const out=[];let i=0,j=0,o=null;
+    while(i<n||j<m){if(i<n&&j<m&&a[i]===b[j]){o=null;i++;j++;continue;}
+      if(!o){o={i0:i,i1:i,ins:[]};out.push(o);}
+      if(j<m&&(i===n||T[i][j+1]>=T[i+1][j]))o.ins.push(b[j++]);else o.i1=++i;}
+    return {out,common:T[0][0]};};
+  // the cursor walks word by word over short distances, and jumps (a click) over long ones
+  const moveTo=async t=>{if(t===pos)return;caret.classList.add('busy');
+    const dir=t>pos?1:-1,stops=[];for(let p=pos+dir;p!==t;p+=dir)if(p>0&&s[p-1]===' ')stops.push(p);
+    if(stops.length<=7){for(const p of stops){pos=p;draw();await wait(rnd(45,85));}}else await wait(rnd(260,420));
+    pos=t;draw();await wait(rnd(200,340));};
+  const type=async text=>{caret.classList.add('busy');
+    for(const c of text){
+      if(typos>0&&/[a-z]/.test(c)&&Math.random()<0.05){const bad='etaoinshrdlu'[Math.floor(rnd(0,12))];
+        if(bad!==c){typos--;s=s.slice(0,pos)+bad+s.slice(pos);pos++;draw();await wait(rnd(170,280));s=s.slice(0,pos-1)+s.slice(pos);pos--;draw();await wait(rnd(90,170));}}
+      s=s.slice(0,pos)+c+s.slice(pos);pos++;draw();await wait(rnd(28,76)+(c===' '?36:0));}};
+  const edit=async(cur,op)=>{
+    const start=cur.slice(0,op.i0).join(' ').length+(op.i0>0?1:0);
+    if(op.i1>op.i0){                                    // words to remove, maybe with a replacement
+      let a=start,b=start+cur.slice(op.i0,op.i1).join(' ').length;
+      if(!op.ins.length){if(op.i1<cur.length)b++;else if(op.i0>0)a--;}   // a plain deletion takes one space with it
+      await moveTo(b);
+      if(b-a<=7&&Math.random()<0.45){                   // short: backspace it
+        while(pos>a){s=s.slice(0,pos-1)+s.slice(pos);pos--;draw();await wait(rnd(42,74));}
+      }else{                                            // longer: drag a selection back over it, then delete
+        const byWord=op.i1-op.i0>1;
+        for(let p=b-1;p>a;p--)if(!byWord||s[p-1]===' '){draw([p,b]);await wait(byWord?rnd(70,115):rnd(12,22));}
+        draw([a,b]);await wait(rnd(380,560));
+        s=s.slice(0,a)+s.slice(b);pos=a;draw();await wait(rnd(160,260));
+      }
+      if(op.ins.length)await type(op.ins.join(' '));
+    }else if(op.i0>=cur.length){await moveTo(s.length);await type(' '+op.ins.join(' '));}   // add at the end
+    else{await moveTo(start);await type(op.ins.join(' ')+' ');}                              // squeeze in between words
+  };
+  (async()=>{let ci=0;for(;;){
+    caret.classList.remove('busy');busy=false;
+    await wait(rnd(2800,3800));while(!seen||document.hidden)await wait(600);
+    let ni;do{ni=Math.floor(Math.random()*SUBTITLES.length);}while(ni===ci);
+    const B=SUBTITLES[ni].split(' ');let cur=s.split(' '),d=diff(cur,B);busy=true;typos=1;
+    if(d.common<0.3*Math.max(cur.length,B.length)||d.out.length>5){     // too little in common: rewrite from the first changed word
+      let k=0;while(k<cur.length&&k<B.length&&cur[k]===B[k])k++;
+      await edit(cur,{i0:k,i1:cur.length,ins:B.slice(k)});
+    }else for(let guard=0;guard<12&&(d=diff(cur,B)).out.length;guard++){   // otherwise fix one spot at a time, in no fixed order
+      const grow=o=>o.ins.join(' ').length-cur.slice(o.i0,o.i1).join(' ').length,shrink=d.out.filter(o=>grow(o)<=0),pool=shrink.length?shrink:d.out,op=pool[Math.floor(Math.random()*pool.length)];
+      await edit(cur,op);cur=cur.slice(0,op.i0).concat(op.ins,cur.slice(op.i1));s=cur.join(' ');pos=Math.min(pos,s.length);draw();await wait(rnd(240,520));
+    }
+    s=SUBTITLES[ni];pos=Math.min(pos,s.length);draw();ci=ni;
+  }})();
+}
+function boot(){
+  drawAll();typer();
+  // the "Keep scrolling" cue fades out once the reader has scrolled, and comes back at the top of the page
+  const cue=document.querySelector('.cue');if(cue){const f=()=>cue.classList.toggle('gone',scrollY>24);addEventListener('scroll',f,{passive:true});f();}
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){const id=e.target.closest('.scrolly').dataset.for;setState(id,+e.target.dataset.step);}});},{rootMargin:'-49% 0px -49% 0px',threshold:0});
+  // Steps whose text sits in a .say block switch the chart when the top of that text has risen 25% of the
+  // window height from the bottom. Other steps use the observer.
+  const said=[...document.querySelectorAll('.scrolly')].filter(sc=>sc.querySelector('.say'));
+  document.querySelectorAll('.step').forEach(st=>{if(!said.includes(st.closest('.scrolly')))io.observe(st);});
+  const sync=()=>{const line=innerHeight*0.75;said.forEach(sc=>{let cur=0;
+    sc.querySelectorAll('.say').forEach(m=>{const r=m.getBoundingClientRect();if(r.top<=line+2)cur=+m.closest('.step').dataset.step;});setState(sc.dataset.for,cur);});};
+  let raf=0;addEventListener('scroll',()=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;sync();});},{passive:true});sync();
+  const hf=fig('hero');if(hf){const ho=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){heroSeen=true;const a=FIG.hero.api;if(a&&a.play)a.play();ho.disconnect();}},{threshold:0.6});ho.observe(hf);}
+  let t,lw=innerWidth;addEventListener('resize',()=>{clearTimeout(t);t=setTimeout(()=>{if(innerWidth===lw&&narrow())return;lw=innerWidth;Object.keys(FIG).forEach(id=>{if(id!=='hero'||true)draw(id);});},220);});
+}
+(document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(boot);
+</script>
+</body>
+</html>

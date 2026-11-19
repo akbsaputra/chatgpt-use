@@ -1,0 +1,6 @@
+# Keep LF endings in the repo and in every checkout, whatever core.autocrlf says.
+* text=auto eol=lf
+
+*.woff2 binary
+*.pdf   binary
+*.png   binary

@@ -130,7 +130,7 @@ figure[data-fig="pics"]{margin-top:3.6rem;margin-bottom:4rem}
   section>.scrolly,section>.pair,section.split>h2,section>.wide{max-width:var(--col);margin-left:auto;margin-right:auto}
   /* the pinned chart hangs at the top of the screen with room above and below it, and no rule under it */
   .sticky{top:0;z-index:2;background:var(--bg);margin:0 calc(var(--pad)*-1);padding:1.25rem var(--pad) 1.15rem}
-  .scrolly:not([data-for="grid"]) .sticky{padding-top:2rem;padding-bottom:2rem}
+  .scrolly:not([data-for="grid"]) .sticky{padding-top:2rem;padding-bottom:2.5rem}
   .sticky figcaption{margin-bottom:.4rem}
   .sticky figcaption .ct{font-size:.875rem}
   .sticky figcaption .ci{display:none}
@@ -145,6 +145,7 @@ figure[data-fig="pics"]{margin-top:3.6rem;margin-bottom:4rem}
   .pair{display:flex;flex-direction:column}
   .pair .prose,.duo-text{display:contents}
   .pair figure{order:1;margin:.7rem 0 2.2rem}
+  .pair .acts{align-self:stretch}
   #crowd .prose p:nth-child(n+3),#crowd .acts{order:2}
   #tell .prose>:nth-child(n+3){order:2}
 }
